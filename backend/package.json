@@ -1,0 +1,22 @@
+{
+  "name": "tic_tac_toe",
+  "version": "1.0.0",
+  "description": "this is full stack tic tac toe game using web socket",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "websocket",
+    "socket.io"
+  ],
+  "author": "Abdur Rab Khan",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.7.7",
+    "express": "^4.21.1",
+    "ioredis": "^5.4.1",
+    "mongoose": "^8.8.0",
+    "socket.io": "^4.8.1"
+  }
+}
