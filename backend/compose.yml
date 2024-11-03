@@ -1,0 +1,12 @@
+version: "3.8"
+
+services:
+  db:
+    image: redis
+    restart: always
+    container_name: tic_tac_toe_redis
+    command: ["redis-server", "--requirepass", "random_pass"]
+    volumes:
+      - ./redis-data:/data
+    ports:
+      - "6379:6379"
