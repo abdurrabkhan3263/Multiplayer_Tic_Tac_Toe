@@ -3,16 +3,22 @@ import redis from "../db/client";
 import { CreateRoom } from "../types";
 import express from "express";
 import { AsyncHandler } from "../utils/AsyncHanlder";
+import { ApiError } from "../utils/ErrorHandler";
 
 export default class RoomController {
   // Create a room
 
-  static async createRoom({ name, password, userId }: CreateRoom) {
+  public createRoom = AsyncHandler(async function (
+    req: express.Request,
+    res: express.Response
+  ) {
+    const { name, password, userId } = req.body as CreateRoom;
+
     if (!name.trim() || !password.trim()) {
-      return {
-        success: false,
-        message: "Name and password are required",
-      };
+      throw new ApiError({
+        status: 400,
+        message: "Name and password is required",
+      });
     }
 
     const roomKey = `rooms:${userId}`;
@@ -26,22 +32,23 @@ export default class RoomController {
     }
 
     if (!pushIntoRoom) {
-      return {
-        success: false,
+      throw new ApiError({
+        status: 400,
         message: "Failed to create room",
-      };
+      });
     }
 
-    return {
-      success: true,
-      message: "Room created successfully",
-      data: pushIntoRoom,
-    };
-  }
+    return res.status(200).json(
+      new ResponseHandler({
+        statusCode: 200,
+        message: "Room created successfully",
+      })
+    );
+  });
 
   //   Get all rooms
 
-  static getAllRooms = AsyncHandler(async function (
+  public getAllRooms = AsyncHandler(async function (
     req: express.Request,
     res: express.Response
   ) {
@@ -67,7 +74,7 @@ export default class RoomController {
 
   //   Get room by name
 
-  static getRoomByName = AsyncHandler(async function (
+  public getRoomByName = AsyncHandler(async function (
     req: express.Request,
     res: express.Response
   ) {

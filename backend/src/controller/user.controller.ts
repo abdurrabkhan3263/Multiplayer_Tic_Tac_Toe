@@ -5,10 +5,10 @@ import { AsyncHandler } from "../utils/AsyncHanlder";
 import { ApiError } from "../utils/ErrorHandler";
 import { v4 as uuid } from "uuid";
 
-export class UserController {
+export default class UserController {
   // Get user by id
 
-  static getUser = AsyncHandler(async function (
+  public getUser = AsyncHandler(async function (
     req: expess.Request,
     res: expess.Response
   ) {
@@ -35,7 +35,7 @@ export class UserController {
 
   //   Create user
 
-  static createUser = AsyncHandler(async function (
+  public createUser = AsyncHandler(async function (
     req: expess.Request,
     res: expess.Response
   ) {

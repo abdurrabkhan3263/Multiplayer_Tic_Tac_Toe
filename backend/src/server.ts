@@ -16,8 +16,12 @@ app.use(express.urlencoded({ extended: true }));
 
 // Routes
 import roomRoute from "./routes/room.route";
+import userRoute from "./routes/user.route";
+import socketRoute from "./routes/socket.route";
 
 app.use("/room", roomRoute);
+app.use("/user", userRoute);
+app.use("/socket", socketRoute);
 
 // Error handler
 import ErrorHandler from "./middleware/errorHandler";

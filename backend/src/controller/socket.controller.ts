@@ -8,7 +8,7 @@ import { Socket, Server, Namespace } from "socket.io";
 import { JoinRoom, PlayGame, Room, RoomData, RoomType } from "../types";
 import { v4 as uuid } from "uuid";
 
-export class SocketController {
+export default class SocketController {
   private static instance: SocketController;
   public io: Namespace;
   public socket: Server;
@@ -29,17 +29,22 @@ export class SocketController {
 
   //   method for handling socket connection
 
-  async connection(namespace: string, callback: (socket: any) => void) {
-    this.socket.of(namespace).on("connection", (socket: any) => {
+  async connection(callback: (socket: Socket) => void) {
+    this.io.on("connection", (socket: Socket) => {
       console.log("a user connected", socket.id);
 
       callback(socket);
     });
   }
 
-  async disconnect(socket: any) {
+  async disconnect(socket: Socket) {
     socket.on("disconnect", () => {
       console.log("a user disconnected");
+
+      const userId = socket.data.userId;
+      if (userId) {
+        this.customIdToSocketId.delete(userId);
+      }
     });
   }
 
@@ -47,17 +52,15 @@ export class SocketController {
     this.socket.emit(event, data);
   }
 
-  async on(socket: any, event: string, callback: (data: any) => void) {
+  async on(socket: Socket, event: string, callback: (data: any) => void) {
     socket.on(event, callback);
   }
-
-  async broadcast(socket: Socket, event: string, data: any) {}
 
   async emitToRoom(room: string, event: string, data: any) {
     this.io.to(room).emit(event, data);
   }
 
-  async leaveRoom(socket: any, room: string) {
+  async leaveRoom(socket: Socket, room: string) {
     socket.leave(room);
   }
 
@@ -99,7 +102,7 @@ export class SocketController {
   //  method for handling game logic
 
   async playGame() {
-    this.connection("/game", (socket: Socket) => {
+    this.connection((socket: Socket) => {
       // Handle Disconnection
       this.disconnect(socket);
 
@@ -120,9 +123,6 @@ export class SocketController {
 
       // Handle Play Again
       this.handlePlayAgain(socket);
-
-      // Handle Chatting
-      this.handleChatting(socket);
 
       // Handle Play Game
       this.handlePlayGame(socket);
@@ -145,7 +145,7 @@ export class SocketController {
 
         const numberOfClient = await this.getNumberOfClient(roomName);
 
-        if (numberOfClient.size === 2) {
+        if (numberOfClient.size >= 2) {
           throw new ApiError({
             status: 400,
             message: "Room is full",
@@ -157,16 +157,10 @@ export class SocketController {
           0,
           -1
         );
-        const room: RoomType[] = roomStrings.map(
+
+        const room = roomStrings.map(
           (roomString) => JSON.parse(roomString) as RoomType
         );
-
-        if (!room) {
-          throw new ApiError({
-            status: 404,
-            message: "Room not found",
-          });
-        }
 
         const findThatRoom: RoomType | undefined = room.find((r) => {
           return r.name === roomName;
@@ -179,7 +173,7 @@ export class SocketController {
           });
         }
 
-        if (findThatRoom.password === password) {
+        if (findThatRoom.password !== password) {
           throw new ApiError({
             status: 400,
             message: "Password is incorrect",
@@ -187,10 +181,7 @@ export class SocketController {
         }
 
         socket.join(roomName);
-
-        this.on(socket, "register", async ({ userId }: { userId: string }) => {
-          this.customIdToSocketId.set(userId as string, socket.id);
-        });
+        this.handleRegister(socket);
 
         this.joinedEmitter(socket, roomName);
       }
@@ -208,9 +199,11 @@ export class SocketController {
 
         this.handleRegister(socket);
         this.joinedEmitter(socket, roomName);
+        this.handleChatting(roomName, socket);
       } else {
         socket.join(availableRooms[0]);
         this.joinedEmitter(socket, availableRooms[0]);
+        this.handleChatting(availableRooms[0], socket);
       }
     });
   }
@@ -247,8 +240,8 @@ export class SocketController {
         throw new ApiError({ status: 404, message: "User not found" });
       }
 
-      JSON.parse(player1);
-      JSON.parse(player2);
+      const parsedPlayer1 = JSON.parse(player1);
+      const parsedPlayer2 = JSON.parse(player2);
 
       if (data.winner) {
         await this.increamentScore(data.winner, 5);
@@ -258,10 +251,10 @@ export class SocketController {
       }
 
       this.emitToRoom(data.roomName, "game_over", {
-        player1,
-        player2,
-        winner: data.winner,
-        draw: data.draw,
+        parsedPlayer1,
+        parsedPlayer2,
+        winner: data.winner ?? null,
+        draw: data.draw ?? null,
       });
     });
   }
@@ -290,6 +283,12 @@ export class SocketController {
       "play_game",
       async ({ roomName, userId, data }: PlayGame) => {
         const getNumberOfClient = await this.getNumberOfClient(roomName);
+        const getNumberOfClientArray = Array.from(getNumberOfClient);
+
+        const player1 = this.customIdToSocketId.get(getNumberOfClientArray[0]);
+        const player2 = this.customIdToSocketId.get(getNumberOfClientArray[1]);
+
+        data.turn = data.turn === player2 || !data.turn ? player1 : player2;
 
         if (getNumberOfClient.size === 2) {
           this.emitToRoom(roomName, "game_played", data);
@@ -298,8 +297,10 @@ export class SocketController {
     );
   }
 
-  private handleChatting(socket: Socket) {
-    // TODO: Implement chat logic
+  private handleChatting(roomName: string, socket: Socket) {
+    this.on(socket, "chat", ({ userName, msg }) => {
+      this.emitToRoom(roomName, "chat", { userName, msg });
+    });
   }
 
   private handleRegister(socket: Socket) {
@@ -308,16 +309,15 @@ export class SocketController {
     });
   }
 
-  private emitNumberOfClient(socket: Socket, roomName: string) {
-    this.getNumberOfClient(roomName)
-      .then((clients) => {
-        socket.emit("number_of_clients", { roomName, count: clients.size });
-      })
-      .catch((error) => {
-        throw new ApiError({
-          status: 400,
-          message: `Failed to get number of clients in room ${roomName}. ${error}`,
-        });
+  private async emitNumberOfClient(socket: Socket, roomName: string) {
+    try {
+      const clients = await this.getNumberOfClient(roomName);
+      socket.emit("number_of_clients", { roomName, count: clients.size });
+    } catch (error) {
+      throw new ApiError({
+        status: 400,
+        message: `Failed to get number of clients in room ${roomName}. ${error}`,
       });
+    }
   }
 }

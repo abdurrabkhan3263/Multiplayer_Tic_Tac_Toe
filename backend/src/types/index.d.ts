@@ -27,7 +27,7 @@ export declare type RoomData = {
 };
 
 export declare type GameData = {
-  pass: string;
+  turn: string;
   boardData: [];
 };
 
