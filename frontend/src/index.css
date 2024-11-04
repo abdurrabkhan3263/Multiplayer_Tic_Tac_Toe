@@ -3,6 +3,24 @@
 @tailwind utilities;
 @layer base {
   :root {
-    --radius: 0.5rem
+    --radius: 0.5rem;
+    --bg: #9b7ebd;
+    --text: #3b1e54;
+    --darkText: #3b1e54;
   }
+}
+
+.home_page {
+  background-image: url("/bg.jpg");
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
+}
+
+.home_menu {
+  @apply fixed right-1/2 top-1/2 flex h-screen w-screen -translate-y-1/2 translate-x-1/2 items-center justify-center filter backdrop-blur-md;
+}
+
+.home_menu_card {
+  @apply h-screen w-screen rounded-lg border border-gray-300 bg-white bg-contain bg-center bg-no-repeat p-3 shadow-xl shadow-purple-300/50 sm:h-[700px] sm:w-[600px] md:bg-cover;
 }

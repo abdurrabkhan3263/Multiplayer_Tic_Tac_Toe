@@ -1,12 +1,13 @@
-import React from "react";
-import { Button } from "./components/ui/button";
+import { useNavigate } from "react-router-dom";
+import Home from "./pages/Home";
 
 function App() {
+  const navigate = useNavigate();
+
   return (
-    <div>
-      <h1 className="text-blue-500 font-semibold"></h1>
-      <Button>Click Me</Button>
-    </div>
+    <main className="home_page flex h-screen w-screen items-center justify-center">
+      <Home />
+    </main>
   );
 }
 

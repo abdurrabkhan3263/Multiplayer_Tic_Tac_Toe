@@ -64,10 +64,6 @@ export default class SocketController {
     socket.leave(room);
   }
 
-  async getRooms() {
-    return this.socket.rooms;
-  }
-
   async getNumberOfClient(room: string): Promise<Set<string>> {
     const clients = await this.io.in(room).allSockets();
     return clients;
