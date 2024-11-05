@@ -39,19 +39,20 @@ export default class UserController {
     req: expess.Request,
     res: expess.Response
   ) {
-    const { name } = req.params;
+    const { userName = "" } = req.body;
+
     const userId = uuid();
 
-    if (!name.trim()) {
+    if (!userName.trim()) {
       throw new ApiError({ status: 400, message: "Name is required" });
     }
 
     const user = await redis.set(
       `user:${userId}`,
-      JSON.stringify({ name, tic_tac_toe_high_score: 0 })
+      JSON.stringify({ userName, tic_tac_toe_high_score: 0 })
     );
 
-    if (!user) {
+    if (user !== "OK") {
       throw new ApiError({ status: 400, message: "Failed to create user" });
     }
 
@@ -59,8 +60,67 @@ export default class UserController {
       new ResponseHandler({
         statusCode: 200,
         message: "User created successfully",
-        data: JSON.parse(user),
+        data: {
+          userId,
+          userName,
+          tic_tac_toe_high_score: 0,
+        },
       })
     );
+  });
+
+  public updateUser = AsyncHandler(async function (
+    req: expess.Request,
+    res: expess.Response
+  ) {
+    const { userId } = req.params;
+    const { userName = "" } = req.body;
+
+    if (!userId) {
+      throw new ApiError({ status: 400, message: "User id is required" });
+    } else if (!userName.trim()) {
+      throw new ApiError({ status: 400, message: "Name is required" });
+    }
+
+    try {
+      const user = await redis.get(`user:${userId}`);
+
+      if (!user) {
+        throw new ApiError({ status: 404, message: "User not found" });
+      }
+
+      const updatedUserData = {
+        ...JSON.parse(user),
+        userName,
+      };
+
+      console.log("Updated user data:- ", updatedUserData);
+
+      const updateUser = await redis.set(
+        `user:${userId}`,
+        JSON.stringify(updatedUserData)
+      );
+
+      if (updateUser !== "OK") {
+        throw new ApiError({ status: 400, message: "Failed to update user" });
+      }
+
+      return res.status(200).json(
+        new ResponseHandler({
+          statusCode: 200,
+          message: "User updated successfully",
+          data: {
+            userId,
+            userName,
+          },
+        })
+      );
+    } catch (error) {
+      throw new ApiError({
+        status: 400,
+        message:
+          error instanceof Error ? error?.message : "Failed to update user",
+      });
+    }
   });
 }
