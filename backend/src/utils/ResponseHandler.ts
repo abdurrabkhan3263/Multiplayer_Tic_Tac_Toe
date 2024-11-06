@@ -10,7 +10,7 @@ export class ResponseHandler {
     this.statusCode = statusCode;
     this.message = message;
     this.data = data ?? null;
-    this.status = statusCode < 400 ? "Success" : "Error";
+    this.status = statusCode < 400 ? "success" : "error";
   }
 }
 

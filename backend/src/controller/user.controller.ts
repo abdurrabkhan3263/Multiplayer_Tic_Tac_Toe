@@ -39,9 +39,11 @@ export default class UserController {
     req: expess.Request,
     res: expess.Response
   ) {
-    const { userName = "" } = req.body;
+    let { userName = "", userId = "" } = req.body;
 
-    const userId = uuid();
+    if (!userId) {
+      userId = uuid();
+    }
 
     if (!userName.trim()) {
       throw new ApiError({ status: 400, message: "Name is required" });
@@ -122,5 +124,24 @@ export default class UserController {
           error instanceof Error ? error?.message : "Failed to update user",
       });
     }
+  });
+
+  public deleteUser = AsyncHandler(async function (_, res: expess.Response) {
+    const allUser = await redis.keys("user:*");
+
+    if (!allUser.length) {
+      throw new ApiError({ status: 404, message: "User not found" });
+    }
+
+    const deleteAllUser = await redis.del(allUser);
+
+    console.log(deleteAllUser);
+
+    return res.status(200).json(
+      new ResponseHandler({
+        statusCode: 200,
+        message: "User deleted successfully",
+      })
+    );
   });
 }

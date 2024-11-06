@@ -3,3 +3,8 @@ export declare type User = {
   userName: string;
   tic_tac_toe_high_score: number;
 };
+
+export declare type Room = {
+  name: string;
+  password: string;
+};

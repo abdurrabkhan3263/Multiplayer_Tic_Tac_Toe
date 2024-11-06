@@ -21,9 +21,15 @@ function Home() {
     console.log("Play with friends");
   };
 
-  const insertNewUser = async ({ userName }: { userName: string }) => {
+  const insertNewUser = async ({
+    userName,
+    userId,
+  }: {
+    userName: string;
+    userId?: string;
+  }) => {
     try {
-      const res = await addUser({ userName });
+      const res = await addUser({ userName, userId });
 
       if (res?.data) {
         return res.data;
@@ -93,27 +99,50 @@ function Home() {
         const users = (event.target as IDBRequest).result as User[];
         setCurrentUser(users[0]);
 
-        console.log("Users are:- ", users);
+        console.log("Users from indexDB:- ", users);
 
         if (users.length > 0) {
           try {
-            const user = await getUser({ userId: users[0].userId });
-            console.log("User is:- ", user);
+            await getUser({ userId: users[0].userId });
           } catch (error) {
             const AxiosError = error as AxiosError;
             if (AxiosError.status === 404) {
               const newUser = await insertNewUser({
                 userName: users[0].userName,
+                userId: users[0].userId,
               });
 
-              if (newUser) {
-                const transaction = dbRef.current?.transaction(
+              if (newUser && dbRef.current) {
+                const transaction = dbRef.current.transaction(
                   "currentUser",
                   "readwrite",
                 );
-                const store = transaction?.objectStore("currentUser");
+                const store = transaction.objectStore("currentUser");
+                const cursorRequest = store.openCursor();
 
-                store?.put(newUser);
+                cursorRequest.onsuccess = (event) => {
+                  const cursor = (event.target as IDBRequest).result;
+
+                  if (cursor) {
+                    const updatedValue = {
+                      ...cursor.value,
+                      ...newUser,
+                      userId: cursor.value.userId,
+                    };
+                    const updateRequest = cursor.update(updatedValue);
+
+                    updateRequest.onsuccess = () => {
+                      console.log("User updated in IndexedDB");
+                      setCurrentUser(newUser);
+                    };
+
+                    updateRequest.onerror = () => {
+                      console.error("Error updating user in IndexedDB");
+                    };
+
+                    cursor.continue();
+                  }
+                };
               }
             }
           }
@@ -160,7 +189,11 @@ function Home() {
           };
 
           transaction.onerror = () => {
-            console.error("Error updating user in IndexedDB");
+            toast({
+              title: "Error",
+              description: "Error updating user in IndexedDB",
+              variant: "destructive",
+            });
           };
         }
       } else {
@@ -235,7 +268,7 @@ function Home() {
           <JoinRoom
             handleAddUser={handleAddUser}
             IsAddingUser={IsAddingUser}
-            userName={currentUser?.userName}
+            user={currentUser}
             nameDialogOpen={nameDialogOpen}
             setNameDialogOpen={setNameDialogOpen}
           >

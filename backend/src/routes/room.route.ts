@@ -5,7 +5,7 @@ const router = Router();
 const roomController = new RoomController();
 
 router.route("/").get(roomController.getAllRooms);
-router.route("/:roomName").get(roomController.getRoomByName);
+router.route("/:userId").get(roomController.getRoomByName);
 router.route("/create").post(roomController.createRoom);
 
 export default router;

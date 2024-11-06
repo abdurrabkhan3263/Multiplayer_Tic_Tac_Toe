@@ -1,8 +1,14 @@
 import axios from "axios";
 
-export const addUser = async ({ userName }: { userName: string }) => {
+export const addUser = async ({
+  userName,
+  userId,
+}: {
+  userName: string;
+  userId?: string;
+}) => {
   try {
-    const response = await axios.post(`/api/user`, { userName });
+    const response = await axios.post(`/api/user`, { userName, userId });
 
     if (response.statusText !== "OK") {
       throw new Error(response.data?.message || "Failed to add user");

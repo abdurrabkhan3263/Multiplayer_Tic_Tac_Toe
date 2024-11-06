@@ -12,12 +12,19 @@ export default class RoomController {
     req: express.Request,
     res: express.Response
   ) {
-    const { name, password, userId } = req.body as CreateRoom;
+    const { name = "", password = "", userId = "" } = req.body as CreateRoom;
 
     if (!name.trim() || !password.trim()) {
       throw new ApiError({
         status: 400,
         message: "Name and password is required",
+      });
+    }
+
+    if (!userId.trim()) {
+      throw new ApiError({
+        status: 400,
+        message: "User id is required",
       });
     }
 
@@ -27,9 +34,13 @@ export default class RoomController {
       JSON.stringify({ name, password })
     );
 
+    console.log(pushIntoRoom);
+
     if (pushIntoRoom) {
       await redis.expire(roomKey, 60 * 10); //  10 minutes
     }
+
+    const getAddedRoom = await redis.lIndex(roomKey, 0);
 
     if (!pushIntoRoom) {
       throw new ApiError({
@@ -42,6 +53,7 @@ export default class RoomController {
       new ResponseHandler({
         statusCode: 200,
         message: "Room created successfully",
+        data: JSON.parse(getAddedRoom || "{}"),
       })
     );
   });
@@ -63,10 +75,19 @@ export default class RoomController {
       );
     }
 
+    const allRooms = (
+      await Promise.all(
+        rooms.map(async (room) => {
+          const roomData = await redis.lRange(room, 0, -1);
+          return roomData.map((data) => JSON.parse(data));
+        })
+      )
+    ).flat();
+
     return res.status(200).json(
       new ResponseHandler({
         statusCode: 200,
-        data: rooms,
+        data: allRooms,
         message: "Rooms fetched successfully",
       })
     );
@@ -95,7 +116,7 @@ export default class RoomController {
     return res.status(200).json(
       new ResponseHandler({
         statusCode: 200,
-        data: room,
+        data: room.map((data) => JSON.parse(data)),
         message: "Room fetched successfully",
       })
     );
