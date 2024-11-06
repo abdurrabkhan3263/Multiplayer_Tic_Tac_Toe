@@ -1,4 +1,4 @@
-import JoinRoom from "@/components/JoinRoom";
+import JoinRoom from "@/components/Rooms/JoinRoom";
 import { Button } from "@/components/ui/button";
 import { Volume2, Users, Edit } from "lucide-react";
 import { BsLaptop } from "react-icons/bs";
@@ -99,8 +99,6 @@ function Home() {
         const users = (event.target as IDBRequest).result as User[];
         setCurrentUser(users[0]);
 
-        console.log("Users from indexDB:- ", users);
-
         if (users.length > 0) {
           try {
             await getUser({ userId: users[0].userId });
@@ -132,7 +130,6 @@ function Home() {
                     const updateRequest = cursor.update(updatedValue);
 
                     updateRequest.onsuccess = () => {
-                      console.log("User updated in IndexedDB");
                       setCurrentUser(newUser);
                     };
 
@@ -184,7 +181,6 @@ function Home() {
           store.put({ ...currentUser, userName });
 
           transaction.oncomplete = () => {
-            console.log("User updated in IndexedDB");
             setCurrentUser({ ...currentUser, userName });
           };
 
@@ -212,7 +208,6 @@ function Home() {
           store.add(newUser);
 
           transaction.oncomplete = () => {
-            console.log("User added to IndexedDB");
             setCurrentUser(newUser);
           };
 

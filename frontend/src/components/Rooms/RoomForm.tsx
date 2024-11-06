@@ -1,9 +1,9 @@
 import React from "react";
-import { Input } from "./ui/input";
-import { Button } from "./ui/button";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 
-interface EnterRoomProps {
+interface RoomFormProps {
   handleRoomSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
   roomName: string;
   setRoomName: React.Dispatch<React.SetStateAction<string>>;
@@ -12,14 +12,14 @@ interface EnterRoomProps {
   header?: string;
 }
 
-function EnterRoom({
+function RoomForm({
   handleRoomSubmit,
   onSubmit,
   roomName,
   setRoomName,
   btnText = "Create Room",
   header = "Custom Room",
-}: EnterRoomProps) {
+}: RoomFormProps) {
   return (
     <>
       <h1 className="text-lg font-semibold">{header}</h1>
@@ -46,4 +46,4 @@ function EnterRoom({
   );
 }
 
-export default EnterRoom;
+export default RoomForm;

@@ -4,7 +4,7 @@ import { Button } from "./ui/button";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-function QuickMatch() {
+function QuickMatchSection() {
   const [matchLoading, setMatchLoading] = React.useState(false);
   const { toast } = useToast();
 
@@ -34,4 +34,4 @@ function QuickMatch() {
   );
 }
 
-export default QuickMatch;
+export default QuickMatchSection;

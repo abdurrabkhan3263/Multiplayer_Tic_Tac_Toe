@@ -1,18 +1,18 @@
 import React, { useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Room as RoomType, User } from "@/types";
-import Room from "./Room";
+import { Room as RoomType } from "@/types";
+import RoomElem from "./RoomElem";
 import { getMyRoom } from "@/lib/action/room.action";
-import { error } from "console";
 import { AxiosError } from "axios";
+import CreateRoom from "./CreateRoom";
 
-interface MyRoomProps {
+interface ListOurRoomsProps {
   userName: string;
   userId: string;
 }
 
-function MyRoom({ userName, userId }: MyRoomProps) {
+function ListOurRooms({ userName, userId }: ListOurRoomsProps) {
   const [listRoom, setListRoom] = React.useState<RoomType[]>([]);
 
   useEffect(() => {
@@ -20,14 +20,9 @@ function MyRoom({ userName, userId }: MyRoomProps) {
       try {
         const response = await getMyRoom({ userId });
 
-        console.log(response);
-
         if (response?.status !== "success") {
           throw new Error(response?.message);
         }
-
-        console.log(response);
-
         setListRoom(response.data);
       } catch (err) {
         const errorMessage =
@@ -43,12 +38,17 @@ function MyRoom({ userName, userId }: MyRoomProps) {
   }, []);
 
   return (
-    <ScrollArea className="h-36 min-h-fit">
+    <ScrollArea className={`${listRoom.length > 0 ? "h-[200px]" : ""} w-full`}>
       <Card className="w-full">
         <CardHeader className="px-4 pb-2 pt-4">
           <CardTitle>
             <div className="flex items-center justify-between">
               <div className="text-lg font-semibold">All Rooms</div>
+              <CreateRoom
+                userId={userId}
+                userName={userName}
+                setListRoom={setListRoom}
+              />
             </div>
           </CardTitle>
         </CardHeader>
@@ -56,7 +56,7 @@ function MyRoom({ userName, userId }: MyRoomProps) {
           <div className="flex flex-col gap-2">
             {listRoom.length > 0 ? (
               listRoom.map(({ name, password }, index) => (
-                <Room key={index} name={name} password={password} />
+                <RoomElem key={index} name={name} password={password} />
               ))
             ) : (
               <div className="text-center">No room available</div>
@@ -68,4 +68,4 @@ function MyRoom({ userName, userId }: MyRoomProps) {
   );
 }
 
-export default MyRoom;
+export default ListOurRooms;

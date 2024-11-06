@@ -96,8 +96,6 @@ export default class UserController {
         userName,
       };
 
-      console.log("Updated user data:- ", updatedUserData);
-
       const updateUser = await redis.set(
         `user:${userId}`,
         JSON.stringify(updatedUserData)
@@ -134,8 +132,6 @@ export default class UserController {
     }
 
     const deleteAllUser = await redis.del(allUser);
-
-    console.log(deleteAllUser);
 
     return res.status(200).json(
       new ResponseHandler({

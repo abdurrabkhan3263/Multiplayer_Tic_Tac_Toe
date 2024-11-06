@@ -1,32 +1,23 @@
 import React from "react";
-import { Room as RoomType } from "@/types";
 import { LockKeyhole, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import EnterRoom from "./EnterRoom";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import RoomForm from "./RoomForm";
 import { useToast } from "@/hooks/use-toast";
 
-interface RoomProps {
+interface RoomElemProps {
   name: string;
   password: string;
   description?: string;
   participants?: number;
 }
 
-function Room({
+function RoomElem({
   name,
   password,
   description = "Private Room",
   participants = 0,
-}: RoomProps) {
+}: RoomElemProps) {
   const [isEntering, setIsEntering] = React.useState<boolean>(false);
   const [roomName, setRoomName] = React.useState<string>(name);
   const { toast } = useToast();
@@ -95,7 +86,7 @@ function Room({
         </div>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
-        <EnterRoom
+        <RoomForm
           roomName={roomName}
           handleRoomSubmit={handleEnterRoom}
           setRoomName={setRoomName}
@@ -108,4 +99,4 @@ function Room({
   );
 }
 
-export default Room;
+export default RoomElem;

@@ -34,8 +34,6 @@ export default class RoomController {
       JSON.stringify({ name, password })
     );
 
-    console.log(pushIntoRoom);
-
     if (pushIntoRoom) {
       await redis.expire(roomKey, 60 * 10); //  10 minutes
     }

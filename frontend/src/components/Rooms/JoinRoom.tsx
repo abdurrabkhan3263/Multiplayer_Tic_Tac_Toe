@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import {
   Dialog,
   DialogContent,
@@ -8,12 +8,10 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { roomObj } from "@/types/zod";
-import { useToast } from "@/hooks/use-toast";
-import UserNameSection from "./UserNameSection";
+import UserNameSection from "../UserNameSection";
 import { User } from "@/types";
-import CustomRoom from "./CustomRoom";
-import QuickMatch from "./QuickMatch";
+import CustomRoom from "./CustomRoomSection";
+import QuickMatch from "../QuickMatchSection";
 
 interface JoinRoomProps {
   children?: React.ReactNode;
@@ -49,11 +47,9 @@ const JoinRoom: React.FC<JoinRoomProps> = ({
           <DialogTrigger asChild>{children}</DialogTrigger>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle>
-                <h2>Join Room</h2>
-              </DialogTitle>
+              <DialogTitle>Join Room</DialogTitle>
               <DialogDescription>
-                <p>Join a room to play with your friends</p>
+                Join a room to play with your friends
               </DialogDescription>
             </DialogHeader>
             <Tabs defaultValue="quick_match" className="w-full">
