@@ -1,14 +1,15 @@
 import JoinRoom from "@/components/Rooms/JoinRoom";
 import { Button } from "@/components/ui/button";
-import { Volume2, Users, Edit } from "lucide-react";
+import { Edit, Users, Volume2 } from "lucide-react";
 import { BsLaptop } from "react-icons/bs";
 import { useToast } from "@/hooks/use-toast";
 import { DB_NAME } from "@/lib/constants";
 import { useEffect, useRef, useState } from "react";
-import UserNameSection from "@/components/UserNameSection";
 import { User } from "@/types";
 import { addUser, getUser, updateUser } from "@/lib/action/user.action";
 import { AxiosError } from "axios";
+import { useNavigate } from "react-router-dom";
+import UserNameSection from "@/components/UserNameSection";
 
 function Home() {
   const { toast } = useToast();
@@ -16,9 +17,14 @@ function Home() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [IsAddingUser, setIsAddingUser] = useState(false);
   const [nameDialogOpen, setNameDialogOpen] = useState(false);
+  const navigate = useNavigate();
 
   const handlePlayWithFriends = () => {
-    console.log("Play with friends");
+    if (!currentUser) {
+      setNameDialogOpen(true);
+    } else {
+      navigate("/home/play");
+    }
   };
 
   const insertNewUser = async ({
@@ -232,10 +238,7 @@ function Home() {
 
   return (
     <div className="home_menu">
-      <div
-        className="home_menu_card flex flex-col"
-        style={{ backgroundImage: "url(/bg_menu.jpg)" }}
-      >
+      <div className={"home_menu_card_bg home_menu_card"}>
         <div className="flex w-full justify-between">
           <UserNameSection
             handleAddUser={handleAddUser}
@@ -252,25 +255,29 @@ function Home() {
             <Volume2 size={24} />
           </Button>
         </div>
-        <div className="mb-16 flex h-full w-full flex-col justify-end gap-3">
-          <Button
-            size={"full"}
-            variant={"gameBtn"}
-            onClick={handlePlayWithFriends}
-          >
-            Play with <Users size={24} />
-          </Button>
-          <JoinRoom
-            handleAddUser={handleAddUser}
-            IsAddingUser={IsAddingUser}
-            user={currentUser}
-            nameDialogOpen={nameDialogOpen}
-            setNameDialogOpen={setNameDialogOpen}
-          >
-            <Button size={"full"} variant={"gameBtn"}>
-              Play with <BsLaptop size={24} />
+        <div
+          className={"mb-16 flex h-full w-full flex-col items-end gap-3 pt-3"}
+        >
+          <div className="mb-16 flex h-full w-full flex-col justify-end gap-3">
+            <Button
+              size={"full"}
+              variant={"gameBtn"}
+              onClick={handlePlayWithFriends}
+            >
+              Play with <Users size={24} />
             </Button>
-          </JoinRoom>
+            <JoinRoom
+              handleAddUser={handleAddUser}
+              IsAddingUser={IsAddingUser}
+              user={currentUser}
+              nameDialogOpen={nameDialogOpen}
+              setNameDialogOpen={setNameDialogOpen}
+            >
+              <Button size={"full"} variant={"gameBtn"}>
+                Play with <BsLaptop size={24} />
+              </Button>
+            </JoinRoom>
+          </div>
         </div>
       </div>
     </div>

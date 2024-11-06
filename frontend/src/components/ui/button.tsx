@@ -22,6 +22,10 @@ const buttonVariants = cva(
         link: "text-neutral-900 underline-offset-4 hover:underline dark:text-neutral-50",
         gameBtn:
           "bg-blue-500 text-neutral-50 hover:bg-blue-600 dark:bg-blue-400 dark:text-neutral-900 dark:hover:bg-blue-500",
+        leaveBtn:
+          "bg-red-500 text-neutral-50 hover:bg-red-600 dark:bg-red-400 dark:text-neutral-900 dark:hover:bg-red-500",
+        coolBtn:
+          "bg-green-500 text-neutral-50 hover:bg-green-600 dark:bg-green-400 dark:text-neutral-900 dark:hover:bg-green-500",
       },
       size: {
         default: "h-10 px-4 py-2",
