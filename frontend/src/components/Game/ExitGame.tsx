@@ -7,7 +7,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "../ui/button";
 
 interface ExitGameProps {
@@ -26,7 +25,7 @@ function ExitGame({ children }: ExitGameProps) {
           </DialogDescription>
         </DialogHeader>
         <div className="flex w-full justify-between">
-          <Button variant={"gameBtn"}>Exit Game</Button>
+          <Button variant={"gameBtn"}>Exit</Button>
           <Button variant={"leaveBtn"}>Cancel</Button>
         </div>
       </DialogContent>

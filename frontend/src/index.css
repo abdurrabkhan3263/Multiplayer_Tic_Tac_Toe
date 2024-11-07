@@ -36,17 +36,17 @@
 
 .toggle_item_active {
   text-align: center;
-  transform-origin: "center";
-  scale: 1;
-  transition: all 0.3s;
+  transform-origin: center;
+  transform: scale(1);
+  transition: all 0.2s;
   opacity: 1;
+  animation: fadeIn 0.1s ease-in-out;
 }
 
 .toggle_item_inactive {
   text-align: center;
-  transform-origin: "center";
-  scale: 0;
-  transition: all 0.3s;
+  transform-origin: center;
+  transform: scale(0);
   opacity: 0;
 }
 
@@ -62,5 +62,5 @@
 }
 
 .animate_fade_in {
-  animation: fadeIn 0.5s ease-in-out;
+  animation: fadeIn 0.3s ease-in-out;
 }
