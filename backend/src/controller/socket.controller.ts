@@ -122,6 +122,12 @@ export default class SocketController {
 
       // Handle Play Game
       this.handlePlayGame(socket);
+
+      // Handle Chatting
+      this.handleChatting(socket);
+
+      // Handle Register
+      this.handleRegister(socket);
     });
   }
 
@@ -193,13 +199,10 @@ export default class SocketController {
         const roomName = `customRoom${id}`;
         socket.join(`customRoom${id}`);
 
-        this.handleRegister(socket);
         this.joinedEmitter(socket, roomName);
-        this.handleChatting(roomName, socket);
       } else {
         socket.join(availableRooms[0]);
         this.joinedEmitter(socket, availableRooms[0]);
-        this.handleChatting(availableRooms[0], socket);
       }
     });
   }
@@ -293,8 +296,8 @@ export default class SocketController {
     );
   }
 
-  private handleChatting(roomName: string, socket: Socket) {
-    this.on(socket, "chat", ({ userName, msg }) => {
+  private handleChatting(socket: Socket) {
+    this.on(socket, "chat", ({ userName, msg, roomName }) => {
       this.emitToRoom(roomName, "chat", { userName, msg });
     });
   }
@@ -315,5 +318,9 @@ export default class SocketController {
         message: `Failed to get number of clients in room ${roomName}. ${error}`,
       });
     }
+  }
+
+  private async handleError(socket: Socket, error: string) {
+    socket.emit("error", error);
   }
 }

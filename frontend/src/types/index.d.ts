@@ -8,3 +8,9 @@ export declare type Room = {
   name: string;
   password: string;
 };
+
+export declare type WinStatusType = {
+  isWin: boolean;
+  player: string;
+  playerId?: string;
+};

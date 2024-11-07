@@ -3,15 +3,23 @@ import { TabsContent } from "@/components/ui/tabs";
 import { Button } from "./ui/button";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { io } from "socket.io-client";
 
 function QuickMatchSection() {
   const [matchLoading, setMatchLoading] = React.useState(false);
   const { toast } = useToast();
+  const [matchSearchingDialog, setMatchSearchingDialog] = React.useState(false);
 
   const handleQuickMatch = async () => {
     try {
       setMatchLoading(true);
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const socket = io("/game");
+
+      socket.emit("quick_match");
+
+      socket.on("error", (error: string) => {
+        throw new Error(error);
+      });
     } catch (error) {
       toast({
         title: "Error",

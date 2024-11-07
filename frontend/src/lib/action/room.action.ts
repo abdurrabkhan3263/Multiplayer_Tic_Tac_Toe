@@ -55,3 +55,19 @@ export async function addNewRoom({
     throw axiosError.response?.data || axiosError;
   }
 }
+
+export async function getRoomById({ roomId }: { roomId: string }) {
+  try {
+    const response = await axios.get(`/api/room/get-room-by-id/${roomId}`);
+
+    if (response.status !== 200) {
+      throw new Error(response?.data?.message);
+    }
+
+    return response.data;
+  } catch (error) {
+    const axiosError = error as AxiosError;
+
+    throw axiosError.response?.data || axiosError;
+  }
+}

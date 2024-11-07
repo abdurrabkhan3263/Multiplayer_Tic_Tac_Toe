@@ -4,6 +4,8 @@ import { CreateRoom } from "../types";
 import express from "express";
 import { AsyncHandler } from "../utils/AsyncHanlder";
 import { ApiError } from "../utils/ErrorHandler";
+import { v4 as uuidv4 } from "uuid";
+import { ROOM_EXPIRES } from "../lib/consts";
 
 export default class RoomController {
   // Create a room
@@ -13,6 +15,7 @@ export default class RoomController {
     res: express.Response
   ) {
     const { name = "", password = "", userId = "" } = req.body as CreateRoom;
+    const roomId = uuidv4();
 
     if (!name.trim() || !password.trim()) {
       throw new ApiError({
@@ -28,17 +31,27 @@ export default class RoomController {
       });
     }
 
-    const roomKey = `rooms:${userId}`;
-    const pushIntoRoom = await redis.lPush(
-      roomKey,
-      JSON.stringify({ name, password })
-    );
+    const createHash = await redis.hSet(`room:${roomId}`, {
+      name,
+      password,
+      activeUsers: "",
+      creator: userId,
+    });
 
-    if (pushIntoRoom) {
-      await redis.expire(roomKey, 60 * 10); //  10 minutes
+    if (!createHash) {
+      throw new ApiError({
+        status: 400,
+        message: "Failed to create room",
+      });
     }
 
-    const getAddedRoom = await redis.lIndex(roomKey, 0);
+    const roomKey = `rooms:${userId}`;
+    const pushIntoRoom = await redis.lPush(roomKey, `room:${roomId}`);
+
+    if (pushIntoRoom) {
+      await redis.expire(roomKey, ROOM_EXPIRES);
+      await redis.expire(`room:${roomId}`, ROOM_EXPIRES);
+    }
 
     if (!pushIntoRoom) {
       throw new ApiError({
@@ -47,11 +60,13 @@ export default class RoomController {
       });
     }
 
+    const getAddedRoom = await redis.hGetAll(`room:${roomId}`);
+
     return res.status(200).json(
       new ResponseHandler({
         statusCode: 200,
         message: "Room created successfully",
-        data: JSON.parse(getAddedRoom || "{}"),
+        data: getAddedRoom,
       })
     );
   });
@@ -76,8 +91,10 @@ export default class RoomController {
     const allRooms = (
       await Promise.all(
         rooms.map(async (room) => {
-          const roomData = await redis.lRange(room, 0, -1);
-          return roomData.map((data) => JSON.parse(data));
+          const roomList = await redis.lRange(room, 0, -1);
+          return await Promise.all(
+            roomList.map(async (roomId) => await redis.hGetAll(roomId))
+          );
         })
       )
     ).flat();
@@ -93,7 +110,7 @@ export default class RoomController {
 
   //   Get room by name
 
-  public getRoomByName = AsyncHandler(async function (
+  public getUserRooms = AsyncHandler(async function (
     req: express.Request,
     res: express.Response
   ) {
@@ -115,6 +132,34 @@ export default class RoomController {
       new ResponseHandler({
         statusCode: 200,
         data: room.map((data) => JSON.parse(data)),
+        message: "Room fetched successfully",
+      })
+    );
+  });
+
+  //   Get room by id
+
+  public getRoomById = AsyncHandler(async function (
+    req: express.Request,
+    res: express.Response
+  ) {
+    const { roomId } = req.params;
+
+    const room = await redis.hGetAll(`room:${roomId}`);
+
+    if (Object.keys(room).length === 0 || !room) {
+      return res.status(404).json(
+        new ResponseHandler({
+          statusCode: 404,
+          message: "Room not found",
+        })
+      );
+    }
+
+    return res.status(200).json(
+      new ResponseHandler({
+        statusCode: 200,
+        data: room,
         message: "Room fetched successfully",
       })
     );
