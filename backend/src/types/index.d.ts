@@ -40,4 +40,6 @@ export declare type PlayGame = {
 export declare type RoomType = {
   name: string;
   password: string;
+  activeUsers: string;
+  creator: string;
 };
