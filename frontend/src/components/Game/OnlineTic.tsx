@@ -1,6 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import GameBoard from "./GameBoard";
+import { io, Socket } from "socket.io-client";
+import { Dialog } from "@radix-ui/react-dialog";
+import {
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "../ui/dialog";
+import { Loader2 } from "lucide-react";
 
 function OnlineTic() {
   const turnArr = ["X", "O"];
@@ -14,6 +23,9 @@ function OnlineTic() {
     isWin: false,
     player: "",
   });
+  const socket = io("/game");
+  const [winDialog, setWinDialog] = useState(false);
+  const [isUsersConnected, setIsUsersConnected] = useState(false);
 
   const toggleTurn = () => {
     turn.current = turn.current === "X" ? "O" : "X";
@@ -108,22 +120,64 @@ function OnlineTic() {
       (box as HTMLElement).addEventListener("click", handleClick);
     });
 
+    socket.on("player_left", () => {
+      console.log("Player left the game");
+      setWinDialog(true);
+    });
+
+    // Emitting for rejoining the game
+    socket.emit("join_game");
+
     return () => {
       boxes.forEach((box) => {
         (box as HTMLElement).removeEventListener("click", handleClick);
       });
+      socket.disconnect();
     };
   }, []);
 
   return (
-    <GameBoard
-      counter={counter}
-      openDialog={openDialog}
-      resetGame={resetGame}
-      winStatus={winStatus}
-      uiTurn={uiTurn}
-      setOpenDialog={setOpenDialog}
-    />
+    <>
+      {!isUsersConnected && (
+        <div className="fixed right-1/2 top-1/2 h-screen w-screen translate-x-1/2 translate-y-1/2 bg-gray-700/15">
+          {
+            <div className="flex flex-col items-center">
+              <h1 className="text-2xl font-bold">Waiting for player</h1>
+              <Loader2 className="h-10 w-10 animate-spin" />
+            </div>
+          }
+        </div>
+      )}
+      <GameBoard
+        counter={counter}
+        openDialog={openDialog}
+        resetGame={resetGame}
+        winStatus={winStatus}
+        uiTurn={uiTurn}
+        setOpenDialog={setOpenDialog}
+      />
+      <Dialog>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Player Left the Game You Win</DialogTitle>
+            <DialogDescription>
+              Player left the game. You win the game.
+            </DialogDescription>
+          </DialogHeader>
+          <div>
+            <button
+              onClick={() => {
+                setWinDialog(false);
+                resetGame();
+              }}
+              className="bg-primary w-full rounded-md py-2 text-white"
+            >
+              Home
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 

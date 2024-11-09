@@ -1,15 +1,19 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { LockKeyhole, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import RoomForm from "./RoomForm";
 import { useToast } from "@/hooks/use-toast";
+import { io } from "socket.io-client";
+import { useNavigate } from "react-router-dom";
 
 interface RoomElemProps {
   name: string;
   password: string;
   description?: string;
   participants?: number;
+  userId: string;
+  roomId: string;
 }
 
 function RoomElem({
@@ -17,10 +21,16 @@ function RoomElem({
   password,
   description = "Private Room",
   participants = 0,
+  userId,
+  roomId,
 }: RoomElemProps) {
   const [isEntering, setIsEntering] = React.useState<boolean>(false);
   const [roomName, setRoomName] = React.useState<string>(name);
   const { toast } = useToast();
+  const socket = io("/game");
+  const [searchingToAnotherUser, setSearchingToAnotherUser] =
+    React.useState(false);
+  const navigate = useNavigate();
 
   const handleEnterRoom = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -43,7 +53,13 @@ function RoomElem({
         throw new Error("Invalid password");
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      socket.emit("join_into_custom_room", {
+        roomName: name,
+        userId,
+        password: enteredPassword,
+        roomId,
+      });
+      setSearchingToAnotherUser(true);
     } catch (error) {
       toast({
         title: "Error",
@@ -57,6 +73,30 @@ function RoomElem({
       setIsEntering(false);
     }
   };
+
+  useEffect(() => {
+    socket.on("match_found", (data: { roomName: string }) => {
+      toast({
+        title: "Match Found",
+        description: `You are matched with another player in ${data.roomName}`,
+      });
+      navigate(`/home/play/${data.roomName}`);
+    });
+
+    socket.on("game_error", (error: string) => {
+      setSearchingToAnotherUser(false);
+      console.log("Error", error);
+      toast({
+        title: "Server Error",
+        description: error,
+        variant: "destructive",
+      });
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
 
   return (
     <Dialog>
@@ -94,6 +134,13 @@ function RoomElem({
           btnText="Enter Room"
           header="Enter to the custom room"
         />
+        {searchingToAnotherUser && (
+          <div className="flex flex-col items-center justify-center space-y-4">
+            <p className="text-sm text-white">
+              Searching for another player...
+            </p>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

@@ -12,6 +12,8 @@ import UserNameSection from "../UserNameSection";
 import { User } from "@/types";
 import CustomRoom from "./CustomRoomSection";
 import QuickMatch from "../QuickMatchSection";
+import { useToast } from "@/hooks/use-toast";
+import { io } from "socket.io-client";
 
 interface JoinRoomProps {
   children?: React.ReactNode;
@@ -30,6 +32,37 @@ const JoinRoom: React.FC<JoinRoomProps> = ({
   nameDialogOpen,
   setNameDialogOpen,
 }) => {
+  const { toast } = useToast();
+
+  React.useEffect(() => {
+    const socket = io("/game");
+    socket.on("connect", () => {
+      console.log("Connected to server");
+    });
+
+    socket.on("connect_error", (err) => {
+      console.error(`Connection error: ${err.message}`);
+      toast({
+        title: "Connection Error",
+        description: `Failed to connect to the server: ${err.message}`,
+        variant: "destructive",
+      });
+    });
+
+    socket.on("error", (error: string) => {
+      console.error(`Server error: ${error}`);
+      toast({
+        title: "Server Error",
+        description: error,
+        variant: "destructive",
+      });
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
+
   return (
     <>
       {!user ? (
@@ -57,7 +90,7 @@ const JoinRoom: React.FC<JoinRoomProps> = ({
                 <TabsTrigger value="quick_match">Quick Match</TabsTrigger>
                 <TabsTrigger value="custom_room">Custom Room</TabsTrigger>
               </TabsList>
-              <QuickMatch />
+              <QuickMatch user={user} />
               <CustomRoom user={user} />
             </Tabs>
           </DialogContent>

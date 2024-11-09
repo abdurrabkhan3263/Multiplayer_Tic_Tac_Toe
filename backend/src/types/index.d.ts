@@ -17,6 +17,7 @@ export declare type Room = {
 };
 
 export declare type JoinRoom = {
+  roomId: string;
   userId: string;
   roomName: string;
   password: string;
@@ -32,7 +33,7 @@ export declare type GameData = {
 };
 
 export declare type PlayGame = {
-  roomName: string;
+  roomId: string;
   userId: string;
   data: any;
 };
@@ -42,4 +43,16 @@ export declare type RoomType = {
   password: string;
   activeUsers: string;
   creator: string;
+};
+
+export declare type User = {
+  userId: string;
+  userName: string;
+  tic_tac_toe_high_score: number;
+};
+
+export declare type RoomList = {
+  room: string;
+  clients: string[];
+  clientCount: number;
 };

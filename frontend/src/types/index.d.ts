@@ -7,6 +7,7 @@ export declare type User = {
 export declare type Room = {
   name: string;
   password: string;
+  id: string;
 };
 
 export declare type WinStatusType = {

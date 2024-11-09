@@ -32,6 +32,7 @@ export default class RoomController {
     }
 
     const createHash = await redis.hSet(`room:${roomId}`, {
+      id: roomId,
       name,
       password,
       activeUsers: "",

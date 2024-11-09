@@ -1,8 +1,7 @@
 import server from "./server";
 import SocketController from "./controller/socket.controller";
 
-const socketController = SocketController.getInstance();
-
+const socketController = new SocketController();
 socketController.playGame();
 
 server.listen(process.env.PORT, () => {

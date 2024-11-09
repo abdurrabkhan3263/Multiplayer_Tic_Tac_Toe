@@ -55,8 +55,14 @@ function ListOurRooms({ userName, userId }: ListOurRoomsProps) {
         <CardContent className="px-4 pb-4 pt-2">
           <div className="flex flex-col gap-2">
             {listRoom.length > 0 ? (
-              listRoom.map(({ name, password }, index) => (
-                <RoomElem key={index} name={name} password={password} />
+              listRoom.map(({ name, password, id }, index) => (
+                <RoomElem
+                  key={index}
+                  name={name}
+                  password={password}
+                  userId={userId}
+                  roomId={id}
+                />
               ))
             ) : (
               <div className="text-center">No room available</div>
