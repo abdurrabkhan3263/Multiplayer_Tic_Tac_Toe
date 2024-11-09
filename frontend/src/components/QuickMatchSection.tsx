@@ -3,9 +3,9 @@ import { TabsContent } from "@/components/ui/tabs";
 import { Button } from "./ui/button";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { io } from "socket.io-client";
 import { User } from "@/types";
 import { useNavigate } from "react-router-dom";
+import { useSocket } from "@/context/SocketProvider";
 
 interface QuickMatchProps {
   user: User;
@@ -16,8 +16,8 @@ function QuickMatchSection({ user }: QuickMatchProps) {
   const { toast } = useToast();
   const [matchSearchingDialog, setMatchSearchingDialog] = React.useState(false);
   const roomId = useRef<{ roomName: string } | null>(null);
-  const socket = io("/game");
   const navigate = useNavigate();
+  const socket = useSocket();
 
   const handleQuickMatch = async () => {
     try {

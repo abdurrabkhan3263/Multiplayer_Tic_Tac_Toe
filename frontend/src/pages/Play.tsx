@@ -36,6 +36,12 @@ function Play() {
         }
       };
     };
+
+    return () => {
+      if (dbRef.current) {
+        dbRef.current.close();
+      }
+    };
   }, []);
 
   return params?.roomId ? <OnlineTic /> : <OfflineTic />;

@@ -6,6 +6,7 @@ import { ApiError } from "../utils/ErrorHandler";
 import server from "../server";
 import { Socket, Server, Namespace } from "socket.io";
 import {
+  GameError,
   JoinRoom,
   PlayGame,
   Room,
@@ -115,6 +116,9 @@ export default class SocketController {
 
   async playGame() {
     this.connection((socket: Socket) => {
+      // Handle Player Rejoin into room
+      this.handlePlayerRejoin(socket);
+
       // Handle Joining into CustomRoom room
       this.handleJoinIntoCustomRoom(socket);
 
@@ -151,15 +155,12 @@ export default class SocketController {
       socket,
       "join_into_custom_room",
       async ({ userId, roomName, password, roomId }: JoinRoom) => {
-        console.log("Joining into custom room:- ", {
-          userId,
-          roomName,
-          password,
-          roomId,
-        });
-
         if (!userId || !roomName || !password || !roomId) {
-          this.emitToRoom(roomName, "game_error", "Invalid data");
+          this.emitGameError({
+            socket,
+            message: "Invalid data",
+            data: { userId, roomName, password, roomId },
+          });
           return;
         }
 
@@ -167,20 +168,31 @@ export default class SocketController {
         const numberOfClient = this.getNumberOfClient(room);
 
         if (numberOfClient.size >= 2) {
-          console.log("Room is full");
-          this.emitToRoom(room, "game_error", "Room is full");
+          this.emitGameError({
+            socket,
+            message: "Room is full",
+            data: { roomName },
+          });
           return;
         }
 
         const findThatRoom = await redis.hGetAll(`room:${roomId}`);
 
         if (!findThatRoom) {
-          this.emitToRoom(room, "game_error", "Room not found");
+          this.emitGameError({
+            socket,
+            message: "Room not found",
+            data: { roomName },
+          });
           return;
         }
 
         if (findThatRoom.password !== password) {
-          this.emitToRoom(room, "game_error", "Invalid password");
+          this.emitGameError({
+            socket,
+            message: "Invalid password",
+            data: { roomName },
+          });
           return;
         }
 
@@ -190,12 +202,19 @@ export default class SocketController {
 
         const updateRoom = await redis.hSet(`room:${roomId}`, {
           ...findThatRoom,
-          clients: JSON.stringify([...numberOfClient, userId]),
+          activeUsers: JSON.stringify([
+            ...numberOfClient,
+            this.customIdToSocketId.get(socket.id),
+          ]),
         });
 
         if (!updateRoom) {
-          this.emitToRoom(room, "game_error", "Failed to update room");
           socket.leave(room);
+          this.emitGameError({
+            socket,
+            message: "Failed to update room",
+            data: { roomName },
+          });
           return;
         }
 
@@ -209,16 +228,31 @@ export default class SocketController {
   private handleJoinIntoRoom(socket: Socket) {
     this.on(socket, "join_into_room", async (data: { user: User }) => {
       const availableRooms = this.findAvailableRoom();
-
       this.handleRegister({ socketId: socket.id, userId: data.user.userId });
+
+      console.log("Available Rooms", availableRooms);
 
       if (availableRooms.length === 0) {
         const id = uuid();
-        const roomName = id;
+        const roomId = `room:${id}`;
 
-        socket.join(roomName);
+        const insertIntoRedis = await redis.hSet(roomId, {
+          room: roomId,
+          type: "public",
+          activeUsers: JSON.stringify([data.user.userId]),
+        });
 
-        this.joinedEmitter(socket, roomName);
+        if (!insertIntoRedis) {
+          this.emitGameError({
+            socket,
+            message: "Failed to create room",
+            data: { roomId },
+          });
+          return;
+        }
+
+        socket.join(roomId);
+        this.joinedEmitter(socket, roomId);
       } else {
         const findRoom = availableRooms.find(
           (room) =>
@@ -226,13 +260,59 @@ export default class SocketController {
             room.clients[0] !== data.user.userId
         );
 
+        console.log("Find Room", findRoom);
+
         if (!findRoom) {
           const id = uuid();
-          const roomName = `customRoom${id}`;
-          socket.join(`customRoom${id}`);
+          const roomId = `room:${id}`;
 
-          this.joinedEmitter(socket, roomName);
+          const insertIntoRedis = await redis.hSet(roomId, {
+            room: roomId,
+            type: "public",
+            activeUsers: JSON.stringify([data.user.userId]),
+          });
+
+          if (!insertIntoRedis) {
+            this.emitGameError({
+              socket,
+              message: "Failed to create room",
+              data: { roomId },
+            });
+            return;
+          }
+
+          socket.join(roomId);
+          this.joinedEmitter(socket, roomId);
         } else {
+          const roomId = findRoom.room;
+          const findRoomIntoRedis = await redis.hGetAll(roomId);
+
+          if (!findRoomIntoRedis) {
+            this.emitGameError({
+              socket,
+              message: "Room not found",
+              data: { roomId },
+            });
+            return;
+          }
+
+          const updateRoom = await redis.hSet(roomId, {
+            ...findRoomIntoRedis,
+            activeUsers: JSON.stringify([
+              ...findRoomIntoRedis.activeUsers,
+              data.user.userId,
+            ]),
+          });
+
+          if (!updateRoom) {
+            this.emitGameError({
+              socket,
+              message: "Failed to update room",
+              data: { roomId },
+            });
+            return;
+          }
+
           socket.join(findRoom.room);
           this.joinedEmitter(socket, findRoom.room);
 
@@ -251,14 +331,45 @@ export default class SocketController {
     this.emitNumberOfClient(socket, roomName);
   }
 
+  private handlePlayerRejoin(socket: Socket) {
+    this.on(socket, "rejoin_into_room", async ({ userId, roomId }) => {
+      const room = `room:${roomId}`;
+
+      const findThatRoom = await redis.hGetAll(room);
+
+      if (!findThatRoom) {
+        this.emitGameError({
+          socket,
+          message: "Room not found or room is expired",
+          data: { roomId },
+        });
+        return;
+      }
+
+      const activeUser = JSON.parse(findThatRoom.activeUsers);
+
+      if (activeUser.includes(userId)) {
+        socket.join(room);
+        this.handleRegister({ socketId: socket.id, userId });
+        this.joinedEmitter(socket, room);
+      } else {
+        this.emitGameError({
+          socket,
+          message: "User not found in room",
+          data: { roomId },
+        });
+      }
+    });
+  }
+
   // TODO : Refactor this method --> Decide how to handle the game logic or event
 
   private handlePlayEvent(socket: Socket) {
     this.on(
       socket,
       "game_playing",
-      async ({ roomName, userId, data }: PlayGame) => {
-        const getNumberOfClient = this.getNumberOfClient(roomName);
+      async ({ roomId, userId, data }: PlayGame) => {
+        const getNumberOfClient = this.getNumberOfClient(roomId);
         const getNumberOfClientArray = Array.from(getNumberOfClient);
 
         const player1 = this.customIdToSocketId.get(getNumberOfClientArray[0]);
@@ -274,7 +385,7 @@ export default class SocketController {
         data.turn = data.turn === player2 || !data.turn ? player1 : player2;
 
         if (getNumberOfClient.size === 2) {
-          this.emitToRoom(roomName, "game_playing", data);
+          this.emitToRoom(roomId, "game_playing", data);
         }
       }
     );
@@ -282,11 +393,14 @@ export default class SocketController {
 
   private handlePlayGame(socket: Socket) {
     this.on(socket, "play_game", async ({ roomId, userId }: PlayGame) => {
+      socket.join(roomId);
+
       const getNumberOfClient = this.getNumberOfClient(roomId);
       const getNumberOfClientArray = Array.from(getNumberOfClient);
 
       const player1 = this.customIdToSocketId.get(getNumberOfClientArray[0]);
       const player2 = this.customIdToSocketId.get(getNumberOfClientArray[1]);
+
       const randomPlayer = Math.floor(Math.random() * 2);
       const gameVal = randomPlayer === 0 ? "X" : "O";
 
@@ -300,10 +414,10 @@ export default class SocketController {
       const data = {
         [player1]: gameVal,
         [player2]: gameVal === "X" ? "O" : "X",
-        roomName,
+        roomId,
       };
 
-      this.emitToRoom(roomName, "game_started", data);
+      this.emitToRoom(roomId, "game_started", data);
     });
   }
 
@@ -381,8 +495,12 @@ export default class SocketController {
     }
   }
 
-  private handleError(socket: Socket, error: string) {
-    socket.emit("error", error);
+  private emitGameError({ socket, message, data }: GameError) {
+    socket.emit("game_error", {
+      success: false,
+      message,
+      data,
+    });
   }
 
   private handleSuccess(socket: Socket, message: string) {

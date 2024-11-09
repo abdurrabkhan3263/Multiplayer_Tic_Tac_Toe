@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "../ui/dialog";
 import { Loader2 } from "lucide-react";
+import RoomProvider from "@/context/RoomContext";
 
 function OnlineTic() {
   const turnArr = ["X", "O"];
@@ -120,11 +121,6 @@ function OnlineTic() {
       (box as HTMLElement).addEventListener("click", handleClick);
     });
 
-    socket.on("player_left", () => {
-      console.log("Player left the game");
-      setWinDialog(true);
-    });
-
     // Emitting for rejoining the game
     socket.emit("join_game");
 
@@ -132,51 +128,52 @@ function OnlineTic() {
       boxes.forEach((box) => {
         (box as HTMLElement).removeEventListener("click", handleClick);
       });
-      socket.disconnect();
     };
   }, []);
 
   return (
     <>
-      {!isUsersConnected && (
-        <div className="fixed right-1/2 top-1/2 h-screen w-screen translate-x-1/2 translate-y-1/2 bg-gray-700/15">
-          {
-            <div className="flex flex-col items-center">
-              <h1 className="text-2xl font-bold">Waiting for player</h1>
-              <Loader2 className="h-10 w-10 animate-spin" />
-            </div>
-          }
-        </div>
-      )}
-      <GameBoard
-        counter={counter}
-        openDialog={openDialog}
-        resetGame={resetGame}
-        winStatus={winStatus}
-        uiTurn={uiTurn}
-        setOpenDialog={setOpenDialog}
-      />
-      <Dialog>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Player Left the Game You Win</DialogTitle>
-            <DialogDescription>
-              Player left the game. You win the game.
-            </DialogDescription>
-          </DialogHeader>
-          <div>
-            <button
-              onClick={() => {
-                setWinDialog(false);
-                resetGame();
-              }}
-              className="bg-primary w-full rounded-md py-2 text-white"
-            >
-              Home
-            </button>
+      <RoomProvider>
+        {!isUsersConnected && (
+          <div className="fixed right-1/2 top-1/2 h-screen w-screen translate-x-1/2 translate-y-1/2 bg-gray-700/15">
+            {
+              <div className="flex flex-col items-center">
+                <h1 className="text-2xl font-bold">Waiting for player</h1>
+                <Loader2 className="h-10 w-10 animate-spin" />
+              </div>
+            }
           </div>
-        </DialogContent>
-      </Dialog>
+        )}
+        <GameBoard
+          counter={counter}
+          openDialog={openDialog}
+          resetGame={resetGame}
+          winStatus={winStatus}
+          uiTurn={uiTurn}
+          setOpenDialog={setOpenDialog}
+        />
+        <Dialog>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Player Left the Game You Win</DialogTitle>
+              <DialogDescription>
+                Player left the game. You win the game.
+              </DialogDescription>
+            </DialogHeader>
+            <div>
+              <button
+                onClick={() => {
+                  setWinDialog(false);
+                  resetGame();
+                }}
+                className="bg-primary w-full rounded-md py-2 text-white"
+              >
+                Home
+              </button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </RoomProvider>
     </>
   );
 }

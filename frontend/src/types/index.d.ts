@@ -5,9 +5,12 @@ export declare type User = {
 };
 
 export declare type Room = {
+  id: string;
   name: string;
   password: string;
-  id: string;
+  creator?: string;
+  type: ROOM_TYPE;
+  activeUsers: string;
 };
 
 export declare type WinStatusType = {
@@ -15,3 +18,8 @@ export declare type WinStatusType = {
   player: string;
   playerId?: string;
 };
+
+export const enum ROOM_TYPE {
+  PUBLIC = "public",
+  PRIVATE = "private",
+}

@@ -1,10 +1,13 @@
+import SocketProvider from "./context/SocketProvider";
 import Home from "./pages/Home";
 
 function App() {
   return (
-    <main className="home_page">
-      <Home />
-    </main>
+    <SocketProvider>
+      <main className="home_page">
+        <Home />
+      </main>
+    </SocketProvider>
   );
 }
 

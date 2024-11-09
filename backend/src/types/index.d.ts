@@ -43,6 +43,7 @@ export declare type RoomType = {
   password: string;
   activeUsers: string;
   creator: string;
+  type: "public" | "private";
 };
 
 export declare type User = {
@@ -56,3 +57,14 @@ export declare type RoomList = {
   clients: string[];
   clientCount: number;
 };
+
+export declare type GameError = {
+  socket: Socket;
+  message: string;
+  data?: any;
+};
+
+export const enum ROOM_TYPE {
+  PUBLIC = "public",
+  PRIVATE = "private",
+}

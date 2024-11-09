@@ -6,12 +6,13 @@ import RoomForm from "./RoomForm";
 import { useToast } from "@/hooks/use-toast";
 import { io } from "socket.io-client";
 import { useNavigate } from "react-router-dom";
+import { useRoomContext } from "@/context/RoomContext";
 
 interface RoomElemProps {
   name: string;
   password: string;
-  description?: string;
-  participants?: number;
+  type: "private" | "public";
+  participants: number;
   userId: string;
   roomId: string;
 }
@@ -19,7 +20,7 @@ interface RoomElemProps {
 function RoomElem({
   name,
   password,
-  description = "Private Room",
+  type,
   participants = 0,
   userId,
   roomId,
@@ -31,6 +32,7 @@ function RoomElem({
   const [searchingToAnotherUser, setSearchingToAnotherUser] =
     React.useState(false);
   const navigate = useNavigate();
+  const { setUserId, setRoomId, setRoom } = useRoomContext();
 
   const handleEnterRoom = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -98,6 +100,12 @@ function RoomElem({
     };
   }, []);
 
+  useEffect(() => {
+    setUserId(userId);
+    setRoomId(roomId);
+    setRoom(name);
+  }, [userId, roomId, name]);
+
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -113,7 +121,9 @@ function RoomElem({
                 <h3 className="text-balance text-sm font-bold text-white">
                   {name}
                 </h3>
-                <p className="text-sm text-purple-100">{description}</p>
+                <p className="text-sm text-purple-100">
+                  {type === "public" ? "Private Room" : "Public Room"}
+                </p>
               </div>
             </div>
             <div className="flex items-center space-x-4">

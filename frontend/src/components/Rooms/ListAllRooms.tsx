@@ -55,15 +55,19 @@ function ListAllRooms({ user }: MyRoomProps) {
         <CardContent className="px-4 pb-4 pt-2">
           <div className="flex flex-col gap-2">
             {listRoom.length > 0 ? (
-              listRoom.map(({ name, password, id }, index) => (
-                <RoomElem
-                  userId={user.userId}
-                  key={index}
-                  name={name}
-                  password={password}
-                  roomId={id}
-                />
-              ))
+              listRoom.map(
+                ({ name, password, id, type, activeUsers }, index) => (
+                  <RoomElem
+                    userId={user.userId}
+                    key={index}
+                    name={name}
+                    password={password}
+                    roomId={id}
+                    type={type}
+                    participants={JSON.parse(activeUsers).length ?? 0}
+                  />
+                ),
+              )
             ) : (
               <div className="text-center">No room available</div>
             )}
