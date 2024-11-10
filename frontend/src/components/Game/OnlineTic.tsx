@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import GameBoard from "./GameBoard";
-import { io, Socket } from "socket.io-client";
 import { Dialog } from "@radix-ui/react-dialog";
 import {
   DialogContent,
@@ -11,6 +10,8 @@ import {
 } from "../ui/dialog";
 import { Loader2 } from "lucide-react";
 import RoomProvider from "@/context/RoomContext";
+import { useSocket } from "@/context/SocketProvider";
+import { useNavigate } from "react-router-dom";
 
 function OnlineTic() {
   const turnArr = ["X", "O"];
@@ -24,9 +25,10 @@ function OnlineTic() {
     isWin: false,
     player: "",
   });
-  const socket = io("/game");
+  const socket = useSocket();
   const [winDialog, setWinDialog] = useState(false);
   const [isUsersConnected, setIsUsersConnected] = useState(false);
+  const navigate = useNavigate();
 
   const toggleTurn = () => {
     turn.current = turn.current === "X" ? "O" : "X";
@@ -112,6 +114,11 @@ function OnlineTic() {
     handleTurn(target);
   };
 
+  const handleExitBtn = () => {
+    socket.emit("player_left");
+    navigate("/home");
+  };
+
   useEffect(() => {
     const boxes = document.querySelectorAll(".tic_tac_box");
 
@@ -121,15 +128,21 @@ function OnlineTic() {
       (box as HTMLElement).addEventListener("click", handleClick);
     });
 
-    // Emitting for rejoining the game
-    socket.emit("join_game");
-
     return () => {
       boxes.forEach((box) => {
         (box as HTMLElement).removeEventListener("click", handleClick);
       });
     };
   }, []);
+
+  // Socket Related
+
+  useEffect(() => {
+    socket.on("player_left", () => {
+      console.log("Player left the game");
+      setWinDialog(true);
+    });
+  });
 
   return (
     <>
@@ -151,6 +164,7 @@ function OnlineTic() {
           winStatus={winStatus}
           uiTurn={uiTurn}
           setOpenDialog={setOpenDialog}
+          handleExitBtn={handleExitBtn}
         />
         <Dialog>
           <DialogContent className="sm:max-w-[425px]">

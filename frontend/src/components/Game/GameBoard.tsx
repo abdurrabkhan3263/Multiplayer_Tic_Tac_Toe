@@ -20,6 +20,7 @@ interface GameBoardProps {
   setOpenDialog: React.Dispatch<React.SetStateAction<boolean>>;
   winStatus: WinStatusType;
   resetGame: () => void;
+  handleExitBtn: () => void;
 }
 
 function GameBoard({
@@ -29,6 +30,7 @@ function GameBoard({
   setOpenDialog,
   winStatus,
   resetGame,
+  handleExitBtn,
 }: GameBoardProps) {
   return (
     <main className="home_page">
@@ -38,7 +40,7 @@ function GameBoard({
             <div className="flex h-fit flex-col">
               <div className="flex h-fit justify-between">
                 <ExitGame>
-                  <Button variant={"coolBtn"}>
+                  <Button variant={"coolBtn"} onClick={handleExitBtn}>
                     <LogOut size={24} />
                   </Button>
                 </ExitGame>

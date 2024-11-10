@@ -59,7 +59,7 @@ function RoomElem({
         roomName: name,
         userId,
         password: enteredPassword,
-        roomId,
+        id: roomId,
       });
       setSearchingToAnotherUser(true);
     } catch (error) {

@@ -42,7 +42,7 @@ export declare type CreateRoom = {
 };
 
 export declare type JoinRoom = {
-  roomId: string;
+  id: string;
   userId: string;
   roomName: string;
   password: string;

@@ -127,25 +127,20 @@ export default class SocketController {
   ) {
     findThatRoom.clientCount += 1;
     const roomName = findThatRoom.roomName;
-    const roomJoined = `room:${roomId}`;
-
-    console.log("Joined room is:- ", roomJoined);
 
     console.log({ findThatRoom });
     const activeUsersArray = JSON.parse(findThatRoom.activeUsers);
     activeUsersArray.push(userId);
 
     try {
-      const updateRoom = await redis.hSet(roomJoined, {
+      const updateRoom = await redis.hSet(roomId, {
         ...findThatRoom,
         activeUsers: JSON.stringify(activeUsersArray),
       });
 
-      socket.join(roomJoined);
-      this.joinedEmitter(socket, roomJoined);
+      socket.join(roomId);
+      this.joinedEmitter(socket, roomId);
       this.handleRegister({ socketId: socket.id, userId });
-
-      console.log({ updateRoom });
 
       if (!updateRoom) {
         this.emitGameError({
@@ -176,7 +171,7 @@ export default class SocketController {
         roomName: "Random_room",
         type: "public",
         activeUsers: JSON.stringify([user.userId]),
-        clientCount: 0,
+        clientCount: 1,
       });
 
       if (!insertIntoRedis) {
@@ -245,19 +240,19 @@ export default class SocketController {
     this.on(
       socket,
       "join_into_custom_room",
-      async ({ userId, roomName, password, roomId }: JoinRoom) => {
-        if (!userId || !roomName || !password || !roomId) {
+      async ({ userId, roomName, password, id }: JoinRoom) => {
+        if (!userId || !roomName || !password || !id) {
           this.emitGameError({
             socket,
             message: "Invalid data",
-            data: { userId, roomName, password, roomId },
+            data: { userId, roomName, password, id },
           });
           return;
         }
 
         try {
-          const room = `${roomName.toLowerCase()}:${roomId}`;
-          const numberOfClient = this.getNumberOfClient(room);
+          const roomId = `${roomName.toLowerCase()}:${id}`;
+          const numberOfClient = this.getNumberOfClient(roomId);
 
           if (numberOfClient.size >= 2) {
             this.emitGameError({
@@ -268,7 +263,7 @@ export default class SocketController {
             return;
           }
 
-          const findRoomRaw = await redis.hGetAll(`room:${roomId}`);
+          const findRoomRaw = await redis.hGetAll(roomId);
 
           const findThatRoom: RoomResponse = {
             roomId: findRoomRaw.roomId,
@@ -299,7 +294,7 @@ export default class SocketController {
 
           await this.updateAndJoinRoom(socket, roomId, userId, findThatRoom);
           if (numberOfClient.size >= 2) {
-            this.emitGameStart(socket, room);
+            this.emitGameStart(socket, roomId);
           }
         } catch (error) {
           console.error("Something went wrong", error);
