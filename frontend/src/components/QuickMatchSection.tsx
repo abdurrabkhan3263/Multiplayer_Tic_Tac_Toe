@@ -3,7 +3,7 @@ import { TabsContent } from "@/components/ui/tabs";
 import { Button } from "./ui/button";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { User } from "@/types";
+import { ErrorType, User } from "@/types";
 import { useNavigate } from "react-router-dom";
 import { useSocket } from "@/context/SocketProvider";
 
@@ -22,10 +22,7 @@ function QuickMatchSection({ user }: QuickMatchProps) {
   const handleQuickMatch = async () => {
     try {
       setMatchLoading(true);
-      socket.emit("join_into_room", { user });
-      socket.on("error", (error: string) => {
-        throw new Error(error);
-      });
+      socket.emit("join_into_room", user);
     } catch (error) {
       toast({
         title: "Error",
@@ -51,10 +48,18 @@ function QuickMatchSection({ user }: QuickMatchProps) {
     });
 
     socket.on("emit_joined_into_room", (data: any) => {
-      console.log("Person joined into room", data);
-
+      console.log("emit_joined_into_room", data);
       setMatchSearchingDialog(true);
       roomId.current = data;
+    });
+
+    socket.on("error", (error: ErrorType) => {
+      setMatchSearchingDialog(false);
+      toast({
+        title: "Error",
+        description: error?.message || "An error occurred",
+        variant: "destructive",
+      });
     });
 
     return () => {

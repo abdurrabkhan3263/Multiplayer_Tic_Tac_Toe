@@ -87,7 +87,6 @@ function RoomElem({
 
     socket.on("game_error", (error: string) => {
       setSearchingToAnotherUser(false);
-      console.log("Error", error);
       toast({
         title: "Server Error",
         description: error,

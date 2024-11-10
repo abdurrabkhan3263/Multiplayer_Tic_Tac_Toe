@@ -1,5 +1,34 @@
 import { Socket } from "socket.io";
 
+export declare type User = {
+  userId: string;
+  userName: string;
+  tic_tac_toe_high_score: number;
+};
+
+export declare type Room = {
+  roomId: string;
+  roomName: string;
+  activeUsers: string;
+  clientCount: number;
+  type: "public" | "private";
+};
+
+export declare type RoomResponse = {
+  roomId: string;
+  roomName: string;
+  password: string;
+  activeUsers: string;
+  clientCount: number;
+  type: "public" | "private";
+};
+
+export declare type AvailableListRooms = {
+  room: string;
+  clients: string[];
+  clientCount: number;
+};
+
 export declare type Response = {
   statusCode: number;
   message: string;
@@ -8,12 +37,8 @@ export declare type Response = {
 
 export declare type CreateRoom = {
   userId: string;
-  name: string;
-  password: string;
-};
-
-export declare type Room = {
   roomName: string;
+  password: string;
 };
 
 export declare type JoinRoom = {
@@ -21,10 +46,6 @@ export declare type JoinRoom = {
   userId: string;
   roomName: string;
   password: string;
-};
-
-export declare type RoomData = {
-  data: any;
 };
 
 export declare type GameData = {
@@ -36,26 +57,6 @@ export declare type PlayGame = {
   roomId: string;
   userId: string;
   data: any;
-};
-
-export declare type RoomType = {
-  name: string;
-  password: string;
-  activeUsers: string;
-  creator: string;
-  type: "public" | "private";
-};
-
-export declare type User = {
-  userId: string;
-  userName: string;
-  tic_tac_toe_high_score: number;
-};
-
-export declare type RoomList = {
-  room: string;
-  clients: string[];
-  clientCount: number;
 };
 
 export declare type GameError = {

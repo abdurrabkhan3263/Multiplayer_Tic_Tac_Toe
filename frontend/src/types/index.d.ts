@@ -6,7 +6,7 @@ export declare type User = {
 
 export declare type Room = {
   id: string;
-  name: string;
+  roomName: string;
   password: string;
   creator?: string;
   type: ROOM_TYPE;
@@ -23,3 +23,9 @@ export const enum ROOM_TYPE {
   PUBLIC = "public",
   PRIVATE = "private",
 }
+
+export declare type ErrorType = {
+  status: boolean;
+  message: string;
+  data?: any;
+};

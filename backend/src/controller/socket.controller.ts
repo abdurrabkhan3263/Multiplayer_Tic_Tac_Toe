@@ -1,18 +1,14 @@
-import expess from "express";
-import { ResponseHandler } from "../utils/ResponseHandler";
 import redis from "../db/client";
-import { AsyncHandler } from "../utils/AsyncHanlder";
 import { ApiError } from "../utils/ErrorHandler";
 import server from "../server";
 import { Socket, Server, Namespace } from "socket.io";
 import {
+  AvailableListRooms,
   GameError,
   JoinRoom,
   PlayGame,
   Room,
-  RoomData,
-  RoomList,
-  RoomType,
+  RoomResponse,
   User,
 } from "../types";
 import { v4 as uuid } from "uuid";
@@ -40,9 +36,10 @@ export default class SocketController {
 
         console.log("user disconnecting:", socket.id, { rooms });
 
-        rooms.forEach((room) => {
+        rooms.forEach(async (room) => {
           if (room !== socket.id) {
             this.EmitPlayerLeft(socket, room);
+            await redis.del(`room:${room}`);
           }
         });
       });
@@ -51,7 +48,17 @@ export default class SocketController {
         const mappedSocket = this.customIdToSocketId.get(socket.id);
 
         if (mappedSocket) {
+          const rooms = Array.from(socket.rooms);
           this.customIdToSocketId.delete(socket.id);
+
+          console.log("user disconnecting:", socket.id, { rooms });
+
+          rooms.forEach(async (room) => {
+            if (room !== socket.id) {
+              this.EmitPlayerLeft(socket, room);
+              await redis.del(`room:${room}`);
+            }
+          });
         }
 
         console.log("user disconnected:", socket.id);
@@ -92,8 +99,8 @@ export default class SocketController {
     }
   }
 
-  findAvailableRoom(): RoomList[] {
-    const availableRooms: RoomList[] = [];
+  findAvailableRoom(): AvailableListRooms[] {
+    const availableRooms: AvailableListRooms[] = [];
     const rooms = this.io.adapter.rooms;
     this.io.fetchSockets();
 
@@ -110,6 +117,90 @@ export default class SocketController {
     }
 
     return availableRooms;
+  }
+
+  async updateAndJoinRoom(
+    socket: Socket,
+    roomId: string,
+    userId: string,
+    findThatRoom: RoomResponse
+  ) {
+    findThatRoom.clientCount += 1;
+    const roomName = findThatRoom.roomName;
+    const roomJoined = `room:${roomId}`;
+
+    console.log("Joined room is:- ", roomJoined);
+
+    console.log({ findThatRoom });
+    const activeUsersArray = JSON.parse(findThatRoom.activeUsers);
+    activeUsersArray.push(userId);
+
+    try {
+      const updateRoom = await redis.hSet(roomJoined, {
+        ...findThatRoom,
+        activeUsers: JSON.stringify(activeUsersArray),
+      });
+
+      socket.join(roomJoined);
+      this.joinedEmitter(socket, roomJoined);
+      this.handleRegister({ socketId: socket.id, userId });
+
+      console.log({ updateRoom });
+
+      if (!updateRoom) {
+        this.emitGameError({
+          socket,
+          message: "Failed to update room",
+          data: { roomName },
+        });
+        return;
+      }
+    } catch (error) {
+      console.error("Something went wrong", error);
+      this.emitGameError({
+        socket,
+        message: "Failed to update room",
+        data: { roomName },
+      });
+      return;
+    }
+  }
+
+  async createRoom(socket: Socket, user: User) {
+    const id = uuid();
+    const roomId = `room:${id}`;
+
+    try {
+      const insertIntoRedis = await redis.hSet(roomId, {
+        roomId: id,
+        roomName: "Random_room",
+        type: "public",
+        activeUsers: JSON.stringify([user.userId]),
+        clientCount: 0,
+      });
+
+      if (!insertIntoRedis) {
+        this.emitGameError({
+          socket,
+          message: "Failed to create room",
+          data: { roomId },
+        });
+        return;
+      }
+
+      await redis.expire(roomId, 60 * 10); // 10 minutes
+    } catch (error) {
+      this.emitGameError({
+        socket,
+        message: "Failed to create room",
+        data: { roomId },
+      });
+      return;
+    }
+
+    socket.join(roomId);
+    this.joinedEmitter(socket, roomId);
+    this.handleRegister({ socketId: socket.id, userId: user.userId });
   }
 
   //  method for handling game logic
@@ -164,130 +255,82 @@ export default class SocketController {
           return;
         }
 
-        const room = `${roomName.toLowerCase()}:${roomId}`;
-        const numberOfClient = this.getNumberOfClient(room);
+        try {
+          const room = `${roomName.toLowerCase()}:${roomId}`;
+          const numberOfClient = this.getNumberOfClient(room);
 
-        if (numberOfClient.size >= 2) {
+          if (numberOfClient.size >= 2) {
+            this.emitGameError({
+              socket,
+              message: "Room is full",
+              data: { roomName },
+            });
+            return;
+          }
+
+          const findRoomRaw = await redis.hGetAll(`room:${roomId}`);
+
+          const findThatRoom: RoomResponse = {
+            roomId: findRoomRaw.roomId,
+            roomName: findRoomRaw.roomName,
+            password: findRoomRaw.password,
+            activeUsers: findRoomRaw.activeUsers,
+            clientCount: parseInt(findRoomRaw.clientCount),
+            type: findRoomRaw.type as "public" | "private",
+          };
+
+          if (!findRoomRaw) {
+            this.emitGameError({
+              socket,
+              message: "Room not found",
+              data: { roomName },
+            });
+            return;
+          }
+
+          if (findThatRoom.password !== password) {
+            this.emitGameError({
+              socket,
+              message: "Invalid password",
+              data: { roomName },
+            });
+            return;
+          }
+
+          await this.updateAndJoinRoom(socket, roomId, userId, findThatRoom);
+          if (numberOfClient.size >= 2) {
+            this.emitGameStart(socket, room);
+          }
+        } catch (error) {
+          console.error("Something went wrong", error);
           this.emitGameError({
             socket,
-            message: "Room is full",
+            message: "Failed to join room",
             data: { roomName },
           });
-          return;
-        }
-
-        const findThatRoom = await redis.hGetAll(`room:${roomId}`);
-
-        if (!findThatRoom) {
-          this.emitGameError({
-            socket,
-            message: "Room not found",
-            data: { roomName },
-          });
-          return;
-        }
-
-        if (findThatRoom.password !== password) {
-          this.emitGameError({
-            socket,
-            message: "Invalid password",
-            data: { roomName },
-          });
-          return;
-        }
-
-        socket.join(room);
-        this.handleRegister({ socketId: socket.id, userId });
-        this.joinedEmitter(socket, room);
-
-        const updateRoom = await redis.hSet(`room:${roomId}`, {
-          ...findThatRoom,
-          activeUsers: JSON.stringify([
-            ...numberOfClient,
-            this.customIdToSocketId.get(socket.id),
-          ]),
-        });
-
-        if (!updateRoom) {
-          socket.leave(room);
-          this.emitGameError({
-            socket,
-            message: "Failed to update room",
-            data: { roomName },
-          });
-          return;
-        }
-
-        if (numberOfClient.size >= 2) {
-          this.emitGameStart(socket, room);
         }
       }
     );
   }
 
   private handleJoinIntoRoom(socket: Socket) {
-    this.on(socket, "join_into_room", async (data: { user: User }) => {
+    this.on(socket, "join_into_room", async (user: User) => {
       const availableRooms = this.findAvailableRoom();
-      this.handleRegister({ socketId: socket.id, userId: data.user.userId });
-
-      console.log("Available Rooms", availableRooms);
 
       if (availableRooms.length === 0) {
-        const id = uuid();
-        const roomId = `room:${id}`;
-
-        const insertIntoRedis = await redis.hSet(roomId, {
-          room: roomId,
-          type: "public",
-          activeUsers: JSON.stringify([data.user.userId]),
-        });
-
-        if (!insertIntoRedis) {
-          this.emitGameError({
-            socket,
-            message: "Failed to create room",
-            data: { roomId },
-          });
-          return;
-        }
-
-        socket.join(roomId);
-        this.joinedEmitter(socket, roomId);
+        this.createRoom(socket, user);
       } else {
         const findRoom = availableRooms.find(
-          (room) =>
-            (room.clientCount === 1 || room.clientCount === 0) &&
-            room.clients[0] !== data.user.userId
+          (room) => room.clientCount === 1 || room.clientCount === 0
         );
 
-        console.log("Find Room", findRoom);
-
-        if (!findRoom) {
-          const id = uuid();
-          const roomId = `room:${id}`;
-
-          const insertIntoRedis = await redis.hSet(roomId, {
-            room: roomId,
-            type: "public",
-            activeUsers: JSON.stringify([data.user.userId]),
-          });
-
-          if (!insertIntoRedis) {
-            this.emitGameError({
-              socket,
-              message: "Failed to create room",
-              data: { roomId },
-            });
-            return;
-          }
-
-          socket.join(roomId);
-          this.joinedEmitter(socket, roomId);
-        } else {
+        if (findRoom) {
           const roomId = findRoom.room;
+
           const findRoomIntoRedis = await redis.hGetAll(roomId);
 
           if (!findRoomIntoRedis) {
+            console.log("Room not found");
             this.emitGameError({
               socket,
               message: "Room not found",
@@ -296,29 +339,32 @@ export default class SocketController {
             return;
           }
 
-          const updateRoom = await redis.hSet(roomId, {
-            ...findRoomIntoRedis,
-            activeUsers: JSON.stringify([
-              ...findRoomIntoRedis.activeUsers,
-              data.user.userId,
-            ]),
-          });
+          console.log({ findRoomIntoRedis });
 
-          if (!updateRoom) {
-            this.emitGameError({
-              socket,
-              message: "Failed to update room",
-              data: { roomId },
-            });
-            return;
-          }
+          const findThatRoom: RoomResponse = {
+            roomId: findRoomIntoRedis.roomId,
+            roomName: findRoomIntoRedis.roomName ?? "Random_room",
+            password: findRoomIntoRedis.password ?? "",
+            activeUsers: findRoomIntoRedis.activeUsers,
+            clientCount: parseInt(findRoomIntoRedis.clientCount),
+            type: findRoomIntoRedis.type as "public" | "private",
+          };
 
-          socket.join(findRoom.room);
-          this.joinedEmitter(socket, findRoom.room);
+          await this.updateAndJoinRoom(
+            socket,
+            roomId,
+            user.userId,
+            findThatRoom
+          );
+
+          console.log("Is Match going to start", findRoom);
 
           if (findRoom.clientCount === 1) {
             this.emitGameStart(socket, findRoom.room);
           }
+        } else {
+          console.log("Room is came here also");
+          await this.createRoom(socket, user);
         }
       }
     });
@@ -430,7 +476,7 @@ export default class SocketController {
   }
 
   private handleGameOver(socket: Socket) {
-    this.on(socket, "game_over", async ({ data }: RoomData) => {
+    this.on(socket, "game_over", async ({ data }: any) => {
       const player1 = await redis.get(`user:${data.player1}`);
       const player2 = await redis.get(`user:${data.player2}`);
 
@@ -514,6 +560,7 @@ export default class SocketController {
   }
 
   private emitGameStart(socket: Socket, roomName: string) {
+    console.log("Game is going to start");
     this.emitToRoom(roomName, "match_found", {
       roomName,
       message: "game has started",

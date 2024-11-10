@@ -39,7 +39,7 @@ export async function addNewRoom({
 }) {
   try {
     const response = await axios.post("/api/room/create", {
-      name,
+      roomName: name,
       password,
       userId,
     });

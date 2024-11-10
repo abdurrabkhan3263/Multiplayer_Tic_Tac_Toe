@@ -14,10 +14,14 @@ export default class RoomController {
     req: express.Request,
     res: express.Response
   ) {
-    const { name = "", password = "", userId = "" } = req.body as CreateRoom;
+    const {
+      roomName = "",
+      password = "",
+      userId = "",
+    } = req.body as CreateRoom;
     const roomId = uuidv4();
 
-    if (!name.trim() || !password.trim()) {
+    if (!roomName.trim() || !password.trim()) {
       throw new ApiError({
         status: 400,
         message: "Name and password is required",
@@ -32,11 +36,12 @@ export default class RoomController {
     }
 
     const createHash = await redis.hSet(`room:${roomId}`, {
-      id: roomId,
-      name,
+      roomId,
+      roomName,
       password,
-      activeUsers: "",
-      creator: userId,
+      activeUsers: "[]",
+      clientCount: 0,
+      type: password ? "private" : "public",
     });
 
     if (!createHash) {

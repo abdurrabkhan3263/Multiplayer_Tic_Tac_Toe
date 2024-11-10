@@ -56,15 +56,15 @@ function ListAllRooms({ user }: MyRoomProps) {
           <div className="flex flex-col gap-2">
             {listRoom.length > 0 ? (
               listRoom.map(
-                ({ name, password, id, type, activeUsers }, index) => (
+                ({ roomName, password, id, type, activeUsers }, index) => (
                   <RoomElem
                     userId={user.userId}
                     key={index}
-                    name={name}
+                    name={roomName}
                     password={password}
                     roomId={id}
                     type={type}
-                    participants={JSON.parse(activeUsers).length ?? 0}
+                    participants={0}
                   />
                 ),
               )
