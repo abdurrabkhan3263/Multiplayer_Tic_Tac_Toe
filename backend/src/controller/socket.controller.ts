@@ -141,8 +141,6 @@ export default class SocketController {
       this.joinedEmitter(socket, roomId);
       this.handleRegister({ socketId: socket.id, userId });
 
-      console.log("Room updated", { updateRoom, activeUsersArray, roomId });
-
       if (updateRoom === null || updateRoom === undefined) {
         this.emitGameError({
           socket,
@@ -291,7 +289,6 @@ export default class SocketController {
           }
 
           if (findThatRoom.password !== password) {
-            console.log("Invalid password");
             this.emitGameError({
               socket,
               message: "Invalid password",
@@ -472,7 +469,9 @@ export default class SocketController {
   }
 
   private handlePlayerLeft(socket: Socket) {
+    console.log("Player left the room");
     this.on(socket, "player_left", ({ roomName }) => {
+      console.log("Player left the room", roomName);
       this.EmitPlayerLeft(socket, roomName);
 
       this.leaveRoom(socket, roomName);
@@ -564,7 +563,6 @@ export default class SocketController {
   }
 
   private emitGameStart(socket: Socket, roomName: string) {
-    console.log("Game is going to start", { roomName });
     this.emitToRoom(roomName, "match_found", {
       roomName,
       message: "game has started",

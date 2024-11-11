@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from "../ui/dialog";
 import { Loader2 } from "lucide-react";
-import RoomProvider from "@/context/RoomContext";
+import RoomProvider, { useRoomContext } from "@/context/RoomContext";
 import { useSocket } from "@/context/SocketProvider";
 import { useNavigate } from "react-router-dom";
 
@@ -28,8 +28,8 @@ function OnlineTic() {
   const socket = useSocket();
   const [winDialog, setWinDialog] = useState(false);
   const [isUsersConnected, setIsUsersConnected] = useState(false);
+  const roomContext = useRoomContext();
   const navigate = useNavigate();
-  const roomId = window.location?.pathname.split("/").pop();
 
   const toggleTurn = () => {
     turn.current = turn.current === "X" ? "O" : "X";
@@ -116,8 +116,8 @@ function OnlineTic() {
   };
 
   const handleExitBtn = () => {
+    console.log("Player left the game");
     socket.emit("player_left", { roomId });
-    navigate("/home");
   };
 
   useEffect(() => {
@@ -144,6 +144,10 @@ function OnlineTic() {
       setWinDialog(true);
     });
   });
+
+  useEffect(() => {
+    console.log({ roomContext });
+  }, [roomContext]);
 
   return (
     <>

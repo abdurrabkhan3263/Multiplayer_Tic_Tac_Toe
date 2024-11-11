@@ -1,7 +1,4 @@
-import { createContext, useState, useContext, useEffect } from "react";
-import { useSocket } from "./SocketProvider";
-import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
+import { createContext, useState, useContext } from "react";
 
 interface RoomContextType {
   roomName: string;
@@ -24,40 +21,42 @@ export const RoomContext = createContext<RoomContextType>({
   setUserId: () => {},
   setRoom: () => {},
 });
+
 export const useRoomContext = () => useContext(RoomContext);
 
 const RoomProvider: React.FC<RoomProviderProps> = ({ children }) => {
   const [roomId, setRoomId] = useState<string>("");
   const [userId, setUserId] = useState<string>("");
   const [roomName, setRoom] = useState<string>("");
-  const socket = useSocket();
-  const { toast } = useToast();
-  const navigate = useNavigate();
+  // const socket = useSocket();
+  // const { toast } = useToast();
+  // const navigate = useNavigate();
 
-  useEffect(() => {
-    if (socket && roomId && userId) {
-      socket.emit("rejoin_into_room", {
-        roomName,
-        userId,
-        roomId,
-      });
-    }
+  // useEffect(() => {
+  //   if (socket && roomId && userId) {
+  //     socket.emit("rejoin_into_room", {
+  //       roomName,
+  //       userId,
+  //       roomId,
+  //     });
+  //   }
 
-    const handlePlayerLeft = () => {
-      toast({
-        title: "Error",
-        description: "Player left the game",
-        variant: "destructive",
-      });
-      navigate("/home");
-    };
+  //   const handlePlayerLeft = () => {
+  //     toast({
+  //       title: "Error",
+  //       description: "Player left the game",
+  //       variant: "destructive",
+  //     });
+  //     navigate("/home");
+  //   };
 
-    socket.on("player_left", handlePlayerLeft);
+  //   socket.on("player_left", handlePlayerLeft);
 
-    return () => {
-      socket.off("player_left", handlePlayerLeft);
-    };
-  }, []);
+  //   return () => {
+
+  //     socket.off("player_left", handlePlayerLeft);
+  //   };
+  // }, [navigate, roomId, roomName, socket, toast, userId]);
 
   return (
     <RoomContext.Provider
