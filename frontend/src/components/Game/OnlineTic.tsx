@@ -29,6 +29,7 @@ function OnlineTic() {
   const [winDialog, setWinDialog] = useState(false);
   const [isUsersConnected, setIsUsersConnected] = useState(false);
   const navigate = useNavigate();
+  const roomId = window.location?.pathname.split("/").pop();
 
   const toggleTurn = () => {
     turn.current = turn.current === "X" ? "O" : "X";
@@ -115,7 +116,7 @@ function OnlineTic() {
   };
 
   const handleExitBtn = () => {
-    socket.emit("player_left");
+    socket.emit("player_left", { roomId });
     navigate("/home");
   };
 

@@ -7,12 +7,13 @@ import { useToast } from "@/hooks/use-toast";
 import { io } from "socket.io-client";
 import { useNavigate } from "react-router-dom";
 import { useRoomContext } from "@/context/RoomContext";
+import { GameError } from "@/types";
 
 interface RoomElemProps {
   name: string;
   password: string;
   type: "private" | "public";
-  participants: number;
+  participants: string;
   userId: string;
   roomId: string;
 }
@@ -21,7 +22,7 @@ function RoomElem({
   name,
   password,
   type,
-  participants = 0,
+  participants = "0",
   userId,
   roomId,
 }: RoomElemProps) {
@@ -33,6 +34,7 @@ function RoomElem({
     React.useState(false);
   const navigate = useNavigate();
   const { setUserId, setRoomId, setRoom } = useRoomContext();
+  const [dialogOpen, setDialogOpen] = React.useState(false);
 
   const handleEnterRoom = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -54,6 +56,8 @@ function RoomElem({
       if (enteredPassword !== password) {
         throw new Error("Invalid password");
       }
+
+      console.log("Joining into custom room", name);
 
       socket.emit("join_into_custom_room", {
         roomName: name,
@@ -77,25 +81,38 @@ function RoomElem({
   };
 
   useEffect(() => {
-    socket.on("match_found", (data: { roomName: string }) => {
+    // Listener functions
+
+    const handleGameError = (error: GameError) => {
+      setSearchingToAnotherUser(false);
+      toast({
+        title: "Game Error",
+        description: error.message || "An error occurred",
+        variant: "destructive",
+      });
+    };
+    const handleMatchFound = (data: { roomName: string }) => {
+      console.log("Match found", data);
       toast({
         title: "Match Found",
         description: `You are matched with another player in ${data.roomName}`,
       });
       navigate(`/home/play/${data.roomName}`);
-    });
+    };
 
-    socket.on("game_error", (error: string) => {
-      setSearchingToAnotherUser(false);
-      toast({
-        title: "Server Error",
-        description: error,
-        variant: "destructive",
-      });
-    });
+    // Event listeners
+
+    socket.on("game_error", handleGameError);
+    socket.on("match_found", handleMatchFound);
+
+    // Cleanup
+
+    console.log("Mounting");
 
     return () => {
-      socket.disconnect();
+      console.log("Cleaning up || Unmounting");
+      socket.off("game_error", handleGameError);
+      socket.off("match_found", handleMatchFound);
     };
   }, []);
 
@@ -106,7 +123,7 @@ function RoomElem({
   }, [userId, roomId, name]);
 
   return (
-    <Dialog>
+    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
       <DialogTrigger asChild>
         <div className="group w-full cursor-pointer select-none">
           <div className="flex w-full items-center justify-between rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 p-4 shadow-md transition-all duration-300 hover:scale-[1.02] hover:shadow-lg">

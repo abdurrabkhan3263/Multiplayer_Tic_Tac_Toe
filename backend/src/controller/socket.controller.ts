@@ -121,14 +121,13 @@ export default class SocketController {
 
   async updateAndJoinRoom(
     socket: Socket,
-    roomId: string,
     userId: string,
-    findThatRoom: RoomResponse
+    findThatRoom: RoomResponse,
+    roomId: string
   ) {
     findThatRoom.clientCount += 1;
     const roomName = findThatRoom.roomName;
 
-    console.log({ findThatRoom });
     const activeUsersArray = JSON.parse(findThatRoom.activeUsers);
     activeUsersArray.push(userId);
 
@@ -142,7 +141,9 @@ export default class SocketController {
       this.joinedEmitter(socket, roomId);
       this.handleRegister({ socketId: socket.id, userId });
 
-      if (!updateRoom) {
+      console.log("Room updated", { updateRoom, activeUsersArray, roomId });
+
+      if (updateRoom === null || updateRoom === undefined) {
         this.emitGameError({
           socket,
           message: "Failed to update room",
@@ -241,6 +242,13 @@ export default class SocketController {
       socket,
       "join_into_custom_room",
       async ({ userId, roomName, password, id }: JoinRoom) => {
+        console.log(
+          { userId },
+          "Joining into custom room",
+          roomName,
+          password,
+          id
+        );
         if (!userId || !roomName || !password || !id) {
           this.emitGameError({
             socket,
@@ -251,7 +259,7 @@ export default class SocketController {
         }
 
         try {
-          const roomId = `${roomName.toLowerCase()}:${id}`;
+          const roomId = `room:${id}`;
           const numberOfClient = this.getNumberOfClient(roomId);
 
           if (numberOfClient.size >= 2) {
@@ -262,7 +270,6 @@ export default class SocketController {
             });
             return;
           }
-
           const findRoomRaw = await redis.hGetAll(roomId);
 
           const findThatRoom: RoomResponse = {
@@ -284,6 +291,7 @@ export default class SocketController {
           }
 
           if (findThatRoom.password !== password) {
+            console.log("Invalid password");
             this.emitGameError({
               socket,
               message: "Invalid password",
@@ -292,7 +300,14 @@ export default class SocketController {
             return;
           }
 
-          await this.updateAndJoinRoom(socket, roomId, userId, findThatRoom);
+          const activeUsers = JSON.parse(findThatRoom.activeUsers);
+
+          if (activeUsers.includes(userId)) {
+            socket.join(roomId);
+          } else {
+            await this.updateAndJoinRoom(socket, userId, findThatRoom, roomId);
+          }
+
           if (numberOfClient.size >= 2) {
             this.emitGameStart(socket, roomId);
           }
@@ -325,7 +340,6 @@ export default class SocketController {
           const findRoomIntoRedis = await redis.hGetAll(roomId);
 
           if (!findRoomIntoRedis) {
-            console.log("Room not found");
             this.emitGameError({
               socket,
               message: "Room not found",
@@ -333,8 +347,6 @@ export default class SocketController {
             });
             return;
           }
-
-          console.log({ findRoomIntoRedis });
 
           const findThatRoom: RoomResponse = {
             roomId: findRoomIntoRedis.roomId,
@@ -347,18 +359,15 @@ export default class SocketController {
 
           await this.updateAndJoinRoom(
             socket,
-            roomId,
             user.userId,
-            findThatRoom
+            findThatRoom,
+            roomId
           );
-
-          console.log("Is Match going to start", findRoom);
 
           if (findRoom.clientCount === 1) {
             this.emitGameStart(socket, findRoom.room);
           }
         } else {
-          console.log("Room is came here also");
           await this.createRoom(socket, user);
         }
       }
@@ -463,7 +472,7 @@ export default class SocketController {
   }
 
   private handlePlayerLeft(socket: Socket) {
-    this.on(socket, "player_left", ({ roomName }: Room) => {
+    this.on(socket, "player_left", ({ roomName }) => {
       this.EmitPlayerLeft(socket, roomName);
 
       this.leaveRoom(socket, roomName);
@@ -555,7 +564,7 @@ export default class SocketController {
   }
 
   private emitGameStart(socket: Socket, roomName: string) {
-    console.log("Game is going to start");
+    console.log("Game is going to start", { roomName });
     this.emitToRoom(roomName, "match_found", {
       roomName,
       message: "game has started",

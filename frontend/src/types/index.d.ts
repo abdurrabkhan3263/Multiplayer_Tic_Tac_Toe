@@ -5,12 +5,12 @@ export declare type User = {
 };
 
 export declare type Room = {
-  id: string;
+  roomId: string;
   roomName: string;
   password: string;
-  creator?: string;
-  type: ROOM_TYPE;
   activeUsers: string;
+  clientCount: string;
+  type: ROOM_TYPE;
 };
 
 export declare type WinStatusType = {
@@ -24,7 +24,7 @@ export const enum ROOM_TYPE {
   PRIVATE = "private",
 }
 
-export declare type ErrorType = {
+export declare type GameError = {
   status: boolean;
   message: string;
   data?: any;

@@ -1,6 +1,7 @@
 import React, { createContext, useEffect, useContext } from "react";
 import { socket } from "@/lib/socket.ts";
 import { useToast } from "@/hooks/use-toast";
+import { GameError } from "@/types";
 
 const SocketContext = createContext(socket);
 export const useSocket = () => useContext(SocketContext);

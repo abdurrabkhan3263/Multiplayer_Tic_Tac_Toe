@@ -41,28 +41,21 @@ const RoomProvider: React.FC<RoomProviderProps> = ({ children }) => {
         userId,
         roomId,
       });
-
-      socket.on("game_error", (error: string) => {
-        toast({
-          title: "Error",
-          description: error,
-          variant: "destructive",
-        });
-      });
     }
 
-    socket.on("player_left", () => {
+    const handlePlayerLeft = () => {
       toast({
         title: "Error",
         description: "Player left the game",
         variant: "destructive",
       });
       navigate("/home");
-    });
+    };
+
+    socket.on("player_left", handlePlayerLeft);
 
     return () => {
-      socket.off("player_left");
-      socket.off("game_error");
+      socket.off("player_left", handlePlayerLeft);
     };
   }, []);
 

@@ -3,7 +3,7 @@ import { TabsContent } from "@/components/ui/tabs";
 import { Button } from "./ui/button";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { ErrorType, User } from "@/types";
+import { GameError, User } from "@/types";
 import { useNavigate } from "react-router-dom";
 import { useSocket } from "@/context/SocketProvider";
 
@@ -48,12 +48,11 @@ function QuickMatchSection({ user }: QuickMatchProps) {
     });
 
     socket.on("emit_joined_into_room", (data: any) => {
-      console.log("emit_joined_into_room", data);
       setMatchSearchingDialog(true);
       roomId.current = data;
     });
 
-    socket.on("error", (error: ErrorType) => {
+    socket.on("error", (error: GameError) => {
       setMatchSearchingDialog(false);
       toast({
         title: "Error",
@@ -61,10 +60,6 @@ function QuickMatchSection({ user }: QuickMatchProps) {
         variant: "destructive",
       });
     });
-
-    return () => {
-      socket.disconnect();
-    };
   }, []);
 
   return (
