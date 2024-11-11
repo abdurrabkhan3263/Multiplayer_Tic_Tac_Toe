@@ -3,6 +3,64 @@
 @tailwind utilities;
 @layer base {
   :root {
-    --radius: 0.5rem
+    --radius: 0.5rem;
+    --bg: #9b7ebd;
+    --text: #3b1e54;
+    --darkText: #3b1e54;
   }
+}
+
+.home_page {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  justify-content: center;
+  align-items: center;
+  background-image: url("/bg.jpg");
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
+}
+
+.home_menu_card_bg {
+  background-image: url(/bg_menu.jpg);
+}
+
+.home_menu {
+  @apply fixed right-1/2 top-1/2 flex h-screen w-screen -translate-y-1/2 translate-x-1/2 items-center justify-center filter backdrop-blur-md;
+}
+
+.home_menu_card {
+  @apply flex h-screen w-screen flex-col rounded-lg border border-gray-300 bg-white bg-contain bg-center bg-no-repeat p-3 shadow-xl shadow-purple-300/50 sm:h-[700px] sm:w-[600px] md:bg-cover;
+}
+
+.toggle_item_active {
+  text-align: center;
+  transform-origin: center;
+  transform: scale(1);
+  transition: all 0.2s;
+  opacity: 1;
+  animation: fadeIn 0.1s ease-in-out;
+}
+
+.toggle_item_inactive {
+  text-align: center;
+  transform-origin: center;
+  transform: scale(0);
+  opacity: 0;
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate_fade_in {
+  animation: fadeIn 0.3s ease-in-out;
 }

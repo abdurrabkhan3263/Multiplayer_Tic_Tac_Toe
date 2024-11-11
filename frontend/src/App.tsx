@@ -1,12 +1,13 @@
-import React from "react";
-import { Button } from "./components/ui/button";
+import SocketProvider from "./context/SocketProvider";
+import Home from "./pages/Home";
 
 function App() {
   return (
-    <div>
-      <h1 className="text-blue-500 font-semibold"></h1>
-      <Button>Click Me</Button>
-    </div>
+    <SocketProvider>
+      <main className="home_page">
+        <Home />
+      </main>
+    </SocketProvider>
   );
 }
 
