@@ -1,12 +1,13 @@
+import { User } from "@/types";
 import { createContext, useState, useContext } from "react";
 
 interface RoomContextType {
   roomName: string;
   roomId: string;
-  userId: string;
+  user: User | null;
   setRoomId: React.Dispatch<React.SetStateAction<string>>;
-  setUserId: React.Dispatch<React.SetStateAction<string>>;
-  setRoom: React.Dispatch<React.SetStateAction<string>>;
+  setUser: React.Dispatch<React.SetStateAction<User | null>>;
+  setRoomName: React.Dispatch<React.SetStateAction<string>>;
 }
 
 interface RoomProviderProps {
@@ -15,19 +16,19 @@ interface RoomProviderProps {
 
 export const RoomContext = createContext<RoomContextType>({
   roomId: "",
-  userId: "",
+  user: null,
   roomName: "",
   setRoomId: () => {},
-  setUserId: () => {},
-  setRoom: () => {},
+  setUser: () => {},
+  setRoomName: () => {},
 });
 
 export const useRoomContext = () => useContext(RoomContext);
 
 const RoomProvider: React.FC<RoomProviderProps> = ({ children }) => {
   const [roomId, setRoomId] = useState<string>("");
-  const [userId, setUserId] = useState<string>("");
-  const [roomName, setRoom] = useState<string>("");
+  const [user, setUser] = useState<User | null>(null);
+  const [roomName, setRoomName] = useState<string>("");
   // const socket = useSocket();
   // const { toast } = useToast();
   // const navigate = useNavigate();
@@ -60,7 +61,7 @@ const RoomProvider: React.FC<RoomProviderProps> = ({ children }) => {
 
   return (
     <RoomContext.Provider
-      value={{ roomId, userId, roomName, setRoomId, setUserId, setRoom }}
+      value={{ roomId, user, roomName, setRoomId, setUser, setRoomName }}
     >
       {children}
     </RoomContext.Provider>

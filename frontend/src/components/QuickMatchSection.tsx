@@ -6,7 +6,6 @@ import { useToast } from "@/hooks/use-toast";
 import { GameError, User } from "@/types";
 import { useNavigate } from "react-router-dom";
 import { useSocket } from "@/context/SocketProvider";
-import { useRoomContext } from "@/context/RoomContext";
 
 interface QuickMatchProps {
   user: User;
@@ -19,18 +18,6 @@ function QuickMatchSection({ user }: QuickMatchProps) {
   const roomId = useRef<{ roomName: string } | null>(null);
   const navigate = useNavigate();
   const socket = useSocket();
-  const {
-    setRoomId,
-    setUserId,
-    setRoom,
-    roomId: roomId7,
-    roomName: roomName2,
-    userId: userId2,
-  } = useRoomContext();
-
-  useEffect(() => {
-    console.log({ roomId7, roomName2, userId2 });
-  }, [roomId7, roomName2, setRoomId, setRoom, setUserId, userId2]);
 
   const handleQuickMatch = async () => {
     try {
@@ -55,10 +42,7 @@ function QuickMatchSection({ user }: QuickMatchProps) {
         title: "Match Found",
         description: message || "Match found successfully",
       });
-      setRoomId(roomName);
-      setUserId(user.userId);
-      setRoom(roomName);
-      // navigate(`/home/play/${roomName}`);
+      navigate(`/home/play/${roomName}`);
     });
 
     socket.on("emit_joined_into_room", (data: any) => {

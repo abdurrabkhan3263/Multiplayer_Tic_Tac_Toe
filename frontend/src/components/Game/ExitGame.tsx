@@ -8,19 +8,14 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "../ui/button";
-import { useNavigate } from "react-router-dom";
 
 interface ExitGameProps {
   children: React.ReactNode;
+  handleExit: () => void;
 }
 
-function ExitGame({ children }: ExitGameProps) {
+function ExitGame({ children, handleExit }: ExitGameProps) {
   const [open, setOpen] = React.useState(false);
-  const navigate = useNavigate();
-
-  const handleExit = () => {
-    navigate("/home");
-  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
