@@ -62,9 +62,13 @@ function OnlineTic({ user }: { user: User }) {
     });
 
     if (isWin) {
+      socket.emit("player_win", {
+        roomId,
+        player: Object.keys(turn?.current ?? {})[0],
+      });
       setWinStatus({
         isWin: true,
-        player: turn.current,
+        player: Object.keys(turn?.current ?? {})[0],
       });
       setOpenDialog(true);
     }
@@ -171,6 +175,7 @@ function OnlineTic({ user }: { user: User }) {
     return () => {
       socket.off("game_started", gameStarted);
       socket.off("game_win", handleGameWin);
+      socket.off("game_draw", handleGameDraw);
     };
   }, [socket, user]);
 

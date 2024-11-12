@@ -36,6 +36,20 @@ export declare type Turn = {
 
 export declare type GameData = {
   [key: string]: "X" | "O";
-  [key: number]: "X" | "O";
+  [key: string]: "X" | "O";
   roomId: string;
+};
+
+export declare type ToggleTurn = {
+  roomId: string;
+  turn: "X" | "O";
+  index: number;
+  userId: string;
+  userName: string;
+};
+
+export declare type ToggleEvent = {
+  roomId: string;
+  turn: "X" | "O";
+  playerId: string;
 };

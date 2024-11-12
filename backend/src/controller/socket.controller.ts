@@ -211,6 +211,12 @@ export default class SocketController {
       // Handle Joining into room
       this.handleJoinIntoRoom(socket);
 
+      // Handle Player Win or Lose
+      this.handlePlayerWin(socket);
+
+      // Handle Player Draw
+      this.handlePlayerDraw(socket);
+
       // Handle Player Left
       this.handlePlayerLeft(socket);
 
@@ -225,9 +231,6 @@ export default class SocketController {
 
       // Handle Chatting
       this.handleChatting(socket);
-
-      // Handle Player Left
-      this.handlePlayerLeft(socket);
     });
   }
 
@@ -413,7 +416,7 @@ export default class SocketController {
     this.on(
       socket,
       "game_playing",
-      async ({ roomId, userId, data }: PlayGame) => {
+      async ({ roomId, boxId, userId }: PlayGame) => {
         const getNumberOfClient = this.getNumberOfClient(roomId);
         const getNumberOfClientArray = Array.from(getNumberOfClient);
 
@@ -427,11 +430,12 @@ export default class SocketController {
           });
         }
 
-        data.turn = data.turn === player2 || !data.turn ? player1 : player2;
+        const turn = userId === player1 ? player2 : player1;
 
-        if (getNumberOfClient.size === 2) {
-          this.emitToRoom(roomId, "game_playing", data);
-        }
+        this.emitToRoom(roomId, "game_played", {
+          roomId,
+          data: { boxId, userId, turn },
+        });
       }
     );
   }
@@ -483,6 +487,38 @@ export default class SocketController {
       if (numberOfClients.size <= 1) {
         this.EmitPlayerLeft(socket, roomName);
       }
+    });
+  }
+
+  private handlePlayerWin(socket: Socket) {
+    this.on(socket, "player_win", ({ roomName, userId }) => {
+      const winnerPlayerSocketId = this.customIdToSocketId.get(userId);
+      const looserPlayerSocketId = Array.from(this.customIdToSocketId).find(
+        (player) => player[1] !== userId
+      );
+
+      if (!winnerPlayerSocketId || !looserPlayerSocketId) {
+        throw new ApiError({
+          status: 400,
+          message: "Players not found",
+        });
+      }
+
+      this.socket.to(winnerPlayerSocketId).emit("game_win", {
+        roomName,
+        message: "You have won the game",
+      });
+
+      this.socket.to(looserPlayerSocketId[1]).emit("game_win", {
+        roomName,
+        message: "You have lost the game",
+      });
+    });
+  }
+
+  private handlePlayerDraw(socket: Socket) {
+    this.on(socket, "player_draw", ({ roomName }) => {
+      this.emitGameDraw(socket, roomName);
     });
   }
 
