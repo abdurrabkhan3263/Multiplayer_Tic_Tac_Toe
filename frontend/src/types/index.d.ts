@@ -14,8 +14,9 @@ export declare type Room = {
 };
 
 export declare type WinStatusType = {
-  isWin: boolean;
-  player: string;
+  isDraw: boolean | undefined;
+  isWin: boolean | undefined;
+  playerName: string;
   playerId?: string;
 };
 
@@ -37,19 +38,15 @@ export declare type Turn = {
 export declare type GameData = {
   [key: string]: "X" | "O";
   [key: string]: "X" | "O";
-  roomId: string;
+  turn: string;
 };
 
 export declare type ToggleTurn = {
-  roomId: string;
-  turn: "X" | "O";
-  index: number;
+  boxId: number;
+  turn: string;
   userId: string;
-  userName: string;
 };
 
-export declare type ToggleEvent = {
+export declare type GameComplete = {
   roomId: string;
-  turn: "X" | "O";
-  playerId: string;
 };

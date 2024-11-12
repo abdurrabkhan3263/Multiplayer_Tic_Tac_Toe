@@ -415,13 +415,15 @@ export default class SocketController {
   private handlePlayEvent(socket: Socket) {
     this.on(
       socket,
-      "game_playing",
+      "player_turn",
       async ({ roomId, boxId, userId }: PlayGame) => {
         const getNumberOfClient = this.getNumberOfClient(roomId);
         const getNumberOfClientArray = Array.from(getNumberOfClient);
 
         const player1 = this.customIdToSocketId.get(getNumberOfClientArray[0]);
         const player2 = this.customIdToSocketId.get(getNumberOfClientArray[1]);
+
+        console.log({ player1, player2 });
 
         if (!player1 || !player2) {
           throw new ApiError({
@@ -432,7 +434,7 @@ export default class SocketController {
 
         const turn = userId === player1 ? player2 : player1;
 
-        this.emitToRoom(roomId, "game_played", {
+        this.emitToRoom(roomId, "player_turn", {
           roomId,
           data: { boxId, userId, turn },
         });
@@ -454,16 +456,18 @@ export default class SocketController {
       const gameVal = randomPlayer === 0 ? "X" : "O";
 
       if (!player1 || !player2) {
-        throw new ApiError({
-          status: 400,
+        socket.emit("game_error", {
+          success: false,
           message: "Players not found",
         });
+        return;
       }
 
       const data = {
         [player1]: gameVal,
         [player2]: gameVal === "X" ? "O" : "X",
-        roomId,
+        turn: [player1, player2][randomPlayer],
+        currentUser: [player1, player2][randomPlayer],
       };
 
       this.emitToRoom(roomId, "game_started", data);
@@ -491,7 +495,7 @@ export default class SocketController {
   }
 
   private handlePlayerWin(socket: Socket) {
-    this.on(socket, "player_win", ({ roomName, userId }) => {
+    this.on(socket, "player_win", ({ roomId, userId }) => {
       const winnerPlayerSocketId = this.customIdToSocketId.get(userId);
       const looserPlayerSocketId = Array.from(this.customIdToSocketId).find(
         (player) => player[1] !== userId
@@ -504,21 +508,15 @@ export default class SocketController {
         });
       }
 
-      this.socket.to(winnerPlayerSocketId).emit("game_win", {
-        roomName,
-        message: "You have won the game",
-      });
+      this.socket.to(winnerPlayerSocketId).emit("game_win");
 
-      this.socket.to(looserPlayerSocketId[1]).emit("game_win", {
-        roomName,
-        message: "You have lost the game",
-      });
+      this.socket.to(looserPlayerSocketId[1]).emit("game_lose");
     });
   }
 
   private handlePlayerDraw(socket: Socket) {
-    this.on(socket, "player_draw", ({ roomName }) => {
-      this.emitGameDraw(socket, roomName);
+    this.on(socket, "player_draw", ({ roomId }) => {
+      this.emitGameDraw(socket, roomId);
     });
   }
 

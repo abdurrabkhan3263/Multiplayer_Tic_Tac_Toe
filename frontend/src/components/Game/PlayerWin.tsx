@@ -10,19 +10,12 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "../ui/button";
 import { House, Repeat2 } from "lucide-react";
 import { useSocket } from "@/context/SocketProvider";
+import { WinStatusType } from "@/types";
 
 interface PlayerWinProps {
   roomId: string;
-  open: {
-    isWin: boolean;
-    player: string;
-  };
-  setOpenDialog: React.Dispatch<
-    React.SetStateAction<{
-      isWin: boolean;
-      player: string;
-    }>
-  >;
+  open: WinStatusType;
+  setOpenDialog: React.Dispatch<React.SetStateAction<WinStatusType>>;
 }
 
 function PlayerWin({ roomId, open, setOpenDialog }: PlayerWinProps) {
@@ -31,27 +24,37 @@ function PlayerWin({ roomId, open, setOpenDialog }: PlayerWinProps) {
 
   const handleGoToHome = () => {
     navigate("/home");
-    setOpenDialog({ isWin: false, player: "" });
+    setOpenDialog({ isWin: undefined, isDraw: undefined, playerName: "" });
     socket.emit("player_left", { roomId });
   };
 
   const handlePlayAgain = () => {
-    setOpenDialog({ isWin: false, player: "" });
+    setOpenDialog({ isWin: undefined, isDraw: undefined, playerName: "" });
   };
 
   return (
     <Dialog
-      open={open.isWin}
+      open={open.isWin || open.isDraw}
       onOpenChange={() => {
-        if (open.isWin) {
-          setOpenDialog({ isWin: true, player: "" });
+        if (open.isWin || open.isDraw) {
+          setOpenDialog({
+            isWin: open.isWin,
+            isDraw: open.isDraw,
+            playerName: "",
+          });
         }
       }}
     >
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Congratulation 🎉</DialogTitle>
-          <DialogDescription>{open.player} win the game.</DialogDescription>
+          <DialogTitle>
+            {open.isWin ? "We have a Winner! 🎉" : "Game Over!"}
+          </DialogTitle>
+          <DialogDescription>
+            {open.isWin
+              ? `Congratulations to Player ${open.player} for winning the game!`
+              : "The game ended in a draw. Well played!"}
+          </DialogDescription>
         </DialogHeader>
         <div className="flex justify-between">
           <Button variant={"gameBtn"} onClick={handlePlayAgain}>

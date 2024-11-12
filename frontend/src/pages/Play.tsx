@@ -79,7 +79,7 @@ function Play() {
 
   return (
     <RoomProvider>
-      params?.roomId ? <OnlineTic user={currentUser} /> : <OfflineTic />
+      params?.roomId ? <OnlineTic /> : <OfflineTic />
     </RoomProvider>
   );
 }
