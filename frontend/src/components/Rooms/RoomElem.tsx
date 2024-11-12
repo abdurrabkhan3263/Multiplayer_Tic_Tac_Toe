@@ -57,8 +57,6 @@ function RoomElem({
         throw new Error("Invalid password");
       }
 
-      console.log("Joining into custom room", name);
-
       socket.emit("join_into_custom_room", {
         roomName: name,
         userId,
@@ -80,47 +78,36 @@ function RoomElem({
     }
   };
 
+  // Listener functions
+
+  const handleGameError = (error: GameError) => {
+    setSearchingToAnotherUser(false);
+    toast({
+      title: "Game Error",
+      description: error.message || "An error occurred",
+      variant: "destructive",
+    });
+  };
+
+  const handleMatchFound = (data: { roomName: string }) => {
+    console.log("Match found", data);
+    toast({
+      title: "Match Found",
+      description: `You are matched with another player in ${data.roomName}`,
+    });
+    navigate(`/home/play/${data.roomName}`);
+  };
+
   useEffect(() => {
-    // Listener functions
-
-    const handleGameError = (error: GameError) => {
-      setSearchingToAnotherUser(false);
-      toast({
-        title: "Game Error",
-        description: error.message || "An error occurred",
-        variant: "destructive",
-      });
-    };
-    const handleMatchFound = (data: { roomName: string }) => {
-      console.log("Match found", data);
-      toast({
-        title: "Match Found",
-        description: `You are matched with another player in ${data.roomName}`,
-      });
-      navigate(`/home/play/${data.roomName}`);
-    };
-
-    // Event listeners
-
     socket.on("game_error", handleGameError);
     socket.on("match_found", handleMatchFound);
-
-    // Cleanup
-
-    console.log("Mounting");
-
-    return () => {
-      console.log("Cleaning up || Unmounting");
-      socket.off("game_error", handleGameError);
-      socket.off("match_found", handleMatchFound);
-    };
-  }, []);
+  }, [navigate, socket, toast]);
 
   useEffect(() => {
     setUserId(userId);
     setRoomId(roomId);
     setRoom(name);
-  }, [userId, roomId, name]);
+  }, [userId, roomId, name, setUserId, setRoomId, setRoom]);
 
   return (
     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

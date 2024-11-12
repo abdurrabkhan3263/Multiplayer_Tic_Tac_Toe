@@ -59,6 +59,11 @@ export declare type PlayGame = {
   data: any;
 };
 
+export declare type GameStart = {
+  userId?: string;
+  roomId: string;
+};
+
 export declare type GameError = {
   socket: Socket;
   message: string;

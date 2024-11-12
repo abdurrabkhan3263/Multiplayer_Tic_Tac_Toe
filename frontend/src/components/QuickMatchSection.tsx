@@ -36,15 +36,13 @@ function QuickMatchSection({ user }: QuickMatchProps) {
   };
 
   useEffect(() => {
-    socket.on("match_found", () => {
+    socket.on("match_found", ({ roomName, message }) => {
       setMatchSearchingDialog(false);
       toast({
         title: "Match Found",
-        description: "A match has been found",
+        description: message || "Match found successfully",
       });
-      if (roomId.current) {
-        navigate(`/home/play/${roomId.current?.roomName}`);
-      }
+      navigate(`/home/play/${roomName}`);
     });
 
     socket.on("emit_joined_into_room", (data: any) => {

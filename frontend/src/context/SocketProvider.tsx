@@ -1,7 +1,7 @@
 import React, { createContext, useEffect, useContext } from "react";
 import { socket } from "@/lib/socket.ts";
 import { useToast } from "@/hooks/use-toast";
-import { GameError } from "@/types";
+import { useNavigate } from "react-router-dom";
 
 const SocketContext = createContext(socket);
 export const useSocket = () => useContext(SocketContext);
@@ -10,6 +10,7 @@ const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     socket.connect();
@@ -30,11 +31,7 @@ const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
         variant: "destructive",
       });
     });
-
-    return () => {
-      socket.disconnect();
-    };
-  }, []);
+  }, [navigate, toast]);
 
   return (
     <SocketContext.Provider value={socket}>{children}</SocketContext.Provider>

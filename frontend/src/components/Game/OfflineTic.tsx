@@ -1,6 +1,7 @@
 import GameBoard from "./GameBoard";
 import { cn } from "@/lib/utils";
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 function OfflineTic() {
   const turnArr = ["X", "O"];
@@ -14,6 +15,7 @@ function OfflineTic() {
     isWin: false,
     player: "",
   });
+  const navigate = useNavigate();
 
   const toggleTurn = () => {
     turn.current = turn.current === "X" ? "O" : "X";
@@ -114,6 +116,12 @@ function OfflineTic() {
       });
     };
   }, []);
+
+  const handleExit = () => {
+    setOpenDialog(false);
+    resetGame();
+    navigate("/home");
+  };
   return (
     <GameBoard
       counter={counter}
@@ -122,6 +130,7 @@ function OfflineTic() {
       winStatus={winStatus}
       uiTurn={uiTurn}
       setOpenDialog={setOpenDialog}
+      handleExitBtn={handleExit}
     />
   );
 }

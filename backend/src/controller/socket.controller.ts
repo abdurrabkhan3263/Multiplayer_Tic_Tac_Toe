@@ -5,6 +5,7 @@ import { Socket, Server, Namespace } from "socket.io";
 import {
   AvailableListRooms,
   GameError,
+  GameStart,
   JoinRoom,
   PlayGame,
   Room,
@@ -141,8 +142,6 @@ export default class SocketController {
       this.joinedEmitter(socket, roomId);
       this.handleRegister({ socketId: socket.id, userId });
 
-      console.log("Room updated", { updateRoom, activeUsersArray, roomId });
-
       if (updateRoom === null || updateRoom === undefined) {
         this.emitGameError({
           socket,
@@ -212,17 +211,14 @@ export default class SocketController {
       // Handle Joining into room
       this.handleJoinIntoRoom(socket);
 
-      // Handle Game Over
-      this.handleGameOver(socket);
-
       // Handle Player Left
       this.handlePlayerLeft(socket);
 
       // Handle Play Again
       this.handlePlayAgain(socket);
 
-      // Handle Play Game
-      this.handlePlayGame(socket);
+      // Handle Game Start
+      this.handleGameStart(socket);
 
       // Handle Play Event
       this.handlePlayEvent(socket);
@@ -291,7 +287,6 @@ export default class SocketController {
           }
 
           if (findThatRoom.password !== password) {
-            console.log("Invalid password");
             this.emitGameError({
               socket,
               message: "Invalid password",
@@ -441,8 +436,8 @@ export default class SocketController {
     );
   }
 
-  private handlePlayGame(socket: Socket) {
-    this.on(socket, "play_game", async ({ roomId, userId }: PlayGame) => {
+  private handleGameStart(socket: Socket) {
+    this.on(socket, "start_game", async ({ roomId }: GameStart) => {
       socket.join(roomId);
 
       const getNumberOfClient = this.getNumberOfClient(roomId);
@@ -472,38 +467,12 @@ export default class SocketController {
   }
 
   private handlePlayerLeft(socket: Socket) {
-    this.on(socket, "player_left", ({ roomName }) => {
-      this.EmitPlayerLeft(socket, roomName);
+    console.log("Player left the room");
+    this.on(socket, "player_left", ({ roomId }) => {
+      console.log("Player left the room", { roomId });
+      this.EmitPlayerLeft(socket, roomId);
 
-      this.leaveRoom(socket, roomName);
-    });
-  }
-
-  private handleGameOver(socket: Socket) {
-    this.on(socket, "game_over", async ({ data }: any) => {
-      const player1 = await redis.get(`user:${data.player1}`);
-      const player2 = await redis.get(`user:${data.player2}`);
-
-      if (!player1 || !player2) {
-        throw new ApiError({ status: 404, message: "User not found" });
-      }
-
-      const parsedPlayer1 = JSON.parse(player1);
-      const parsedPlayer2 = JSON.parse(player2);
-
-      if (data.winner) {
-        await this.incrementScore(data.winner, 5);
-      } else if (data.draw) {
-        await this.incrementScore(data.player1, 1);
-        await this.incrementScore(data.player2, 1);
-      }
-
-      this.emitToRoom(data.roomName, "game_over", {
-        parsedPlayer1,
-        parsedPlayer2,
-        winner: data.winner ?? null,
-        draw: data.draw ?? null,
-      });
+      this.leaveRoom(socket, roomId);
     });
   }
 
@@ -553,10 +522,6 @@ export default class SocketController {
     });
   }
 
-  private handleSuccess(socket: Socket, message: string) {
-    socket.emit("success", message);
-  }
-
   private EmitPlayerLeft(socket: Socket, roomName: string) {
     this.emitToRoom(roomName, "player_left", {
       message: "player left the room",
@@ -564,10 +529,30 @@ export default class SocketController {
   }
 
   private emitGameStart(socket: Socket, roomName: string) {
-    console.log("Game is going to start", { roomName });
     this.emitToRoom(roomName, "match_found", {
       roomName,
       message: "game has started",
+    });
+  }
+
+  private emitGameEnd(socket: Socket, roomName: string) {
+    this.emitToRoom(roomName, "game_end", {
+      roomName,
+      message: "game has ended",
+    });
+  }
+
+  private emitGameDraw(socket: Socket, roomName: string) {
+    this.emitToRoom(roomName, "game_draw", {
+      roomName,
+      message: "game has draw",
+    });
+  }
+
+  private emitGameWin(socket: Socket, roomName: string) {
+    this.emitToRoom(roomName, "game_win", {
+      roomName,
+      message: "game has won",
     });
   }
 }

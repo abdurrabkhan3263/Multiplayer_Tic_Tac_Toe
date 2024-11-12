@@ -39,8 +39,8 @@ function GameBoard({
           <div className="flex h-full w-full flex-col overflow-hidden rounded-xl bg-[#EEEEEE] p-2">
             <div className="flex h-fit flex-col">
               <div className="flex h-fit justify-between">
-                <ExitGame>
-                  <Button variant={"coolBtn"} onClick={handleExitBtn}>
+                <ExitGame handleExit={handleExitBtn}>
+                  <Button variant={"coolBtn"}>
                     <LogOut size={24} />
                   </Button>
                 </ExitGame>
@@ -60,7 +60,7 @@ function GameBoard({
                     }
                   ></div>
                   <div className={cn("mx-2 h-12 w-12 overflow-hidden")}>
-                    <img src="/x.png" className="h-full w-full object-cover" />
+                    <img src="/sx.png" className="h-full w-full object-cover" />
                   </div>
                   <span className="mx-2 h-14 w-14 overflow-hidden">
                     <img
@@ -69,7 +69,7 @@ function GameBoard({
                     />
                   </span>
                   <div className={cn("mx-2 h-12 w-12 overflow-hidden")}>
-                    <img src="/o.png" className="h-full w-full object-cover" />
+                    <img src="/so.png" className="h-full w-full object-cover" />
                   </div>
                 </div>
               </div>
@@ -111,7 +111,7 @@ function GameBoard({
           </DialogHeader>
           <div className="flex items-center justify-between">
             <Button variant={"leaveBtn"}>
-              <ExitGame>
+              <ExitGame handleExit={handleExitBtn}>
                 <>
                   Exit <LogOut size={24} />
                 </>

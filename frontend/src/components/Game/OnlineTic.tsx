@@ -1,40 +1,28 @@
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import GameBoard from "./GameBoard";
-import { Dialog } from "@radix-ui/react-dialog";
-import {
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "../ui/dialog";
-import { Loader2 } from "lucide-react";
-import RoomProvider from "@/context/RoomContext";
+import { useRoomContext } from "@/context/RoomContext";
 import { useSocket } from "@/context/SocketProvider";
 import { useNavigate } from "react-router-dom";
+import PlayerLeft from "./PlayerLeft";
+import PlayerWin from "./PlayerWin";
+import { GameData, Turn } from "@/types";
 
-function OnlineTic() {
-  const turnArr = ["X", "O"];
-  const turn = useRef<"X" | "O">(
-    turnArr[Math.floor(Math.random() * 2)] as "X" | "O",
-  );
-  const [uiTurn, setUiTurn] = useState<"X" | "O">(turn.current);
+function OnlineTic({ user }: { user: User }) {
+  const turn = useRef<Turn | null>();
+  const [uiTurn, setUiTurn] = useState<Turn | null>(null);
+  const gameData = useRef<GameData | null>(null);
+
   const counter = useRef(0);
   const [openDialog, setOpenDialog] = useState(false);
   const [winStatus, setWinStatus] = useState({
     isWin: false,
     player: "",
   });
-  const socket = useSocket();
-  const [winDialog, setWinDialog] = useState(false);
-  const [isUsersConnected, setIsUsersConnected] = useState(false);
+  const [leftDialog, setLeftDialog] = useState<boolean>(false);
   const navigate = useNavigate();
-  const roomId = window.location?.pathname.split("/").pop();
-
-  const toggleTurn = () => {
-    turn.current = turn.current === "X" ? "O" : "X";
-    setUiTurn(turn.current);
-  };
+  const socket = useSocket();
+  const { roomId, user, roomName } = useRoomContext();
 
   const resetGame = () => {
     const boxes = document.querySelectorAll(".tic_tac_box");
@@ -139,56 +127,75 @@ function OnlineTic() {
   // Socket Related
 
   useEffect(() => {
-    socket.on("player_left", () => {
+    const handlePlayerLeft = () => {
+      setLeftDialog(true);
       console.log("Player left the game");
-      setWinDialog(true);
-    });
-  });
+    };
+
+    socket.on("player_left", handlePlayerLeft);
+
+    return () => {
+      socket.off("player_left", handlePlayerLeft);
+    };
+  }, [socket]);
+
+  // Game Start
+
+  useEffect(() => {
+    socket.emit("start_game", { roomId });
+  }, [roomId, socket]);
+
+  // Game Start event
+  useEffect(() => {
+    // Handle Functions
+
+    const gameStarted = (data: GameData) => {
+      console.log("User id is:- ", user);
+      console.log("Game Started", data);
+    };
+
+    const handleGameWin = (data) => {
+      console.log("Game Win", data);
+    };
+
+    const handleGameDraw = (data) => {
+      console.log("Game Draw", data);
+    };
+
+    // Socket Events
+
+    socket.on("game_started", gameStarted);
+    socket.on("game_win", handleGameWin);
+    socket.on("game_draw", handleGameDraw);
+
+    return () => {
+      socket.off("game_started", gameStarted);
+      socket.off("game_win", handleGameWin);
+    };
+  }, [socket, user]);
 
   return (
     <>
-      <RoomProvider>
-        {!isUsersConnected && (
-          <div className="fixed right-1/2 top-1/2 h-screen w-screen translate-x-1/2 translate-y-1/2 bg-gray-700/15">
-            {
-              <div className="flex flex-col items-center">
-                <h1 className="text-2xl font-bold">Waiting for player</h1>
-                <Loader2 className="h-10 w-10 animate-spin" />
-              </div>
-            }
-          </div>
-        )}
-        <GameBoard
-          counter={counter}
-          openDialog={openDialog}
-          resetGame={resetGame}
-          winStatus={winStatus}
-          uiTurn={uiTurn}
-          setOpenDialog={setOpenDialog}
-          handleExitBtn={handleExitBtn}
-        />
-        <Dialog>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Player Left the Game You Win</DialogTitle>
-              <DialogDescription>
-                Player left the game. You win the game.
-              </DialogDescription>
-            </DialogHeader>
-            <div>
-              <button
-                onClick={() => {
-                  setWinDialog(false);
-                  resetGame();
-                }}
-                className="bg-primary w-full rounded-md py-2 text-white"
-              >
-                Home
-              </button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </RoomProvider>
+      <GameBoard
+        counter={counter}
+        openDialog={openDialog}
+        resetGame={resetGame}
+        winStatus={winStatus}
+        uiTurn={uiTurn}
+        setOpenDialog={setOpenDialog}
+        handleExitBtn={handleExitBtn}
+      />
+      <PlayerLeft
+        roomId={roomId}
+        open={leftDialog}
+        setOpenDialog={setLeftDialog}
+        resetGame={resetGame}
+      />
+      <PlayerWin
+        roomId={roomId}
+        open={winStatus}
+        setOpenDialog={setWinStatus}
+      />
     </>
   );
 }

@@ -29,3 +29,13 @@ export declare type GameError = {
   message: string;
   data?: any;
 };
+
+export declare type Turn = {
+  [key: string]: "X" | "O";
+};
+
+export declare type GameData = {
+  [key: string]: "X" | "O";
+  [key: number]: "X" | "O";
+  roomId: string;
+};
