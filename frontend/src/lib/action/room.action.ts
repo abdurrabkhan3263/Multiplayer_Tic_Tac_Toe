@@ -53,7 +53,7 @@ export async function getRoomById({ roomId }: { roomId: string }) {
     if (!roomId) {
       throw new Error("Room Id is required");
     }
-    const response = await axios.get(`/api/room/get-room-by-id/${roomId}`);
+    const response = await axios.get(`/api/room/get-room/${roomId}`);
 
     if (response.status !== 200) {
       throw new Error(response?.data?.message);

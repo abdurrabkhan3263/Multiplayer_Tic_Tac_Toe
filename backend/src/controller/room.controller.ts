@@ -151,7 +151,7 @@ export default class RoomController {
   ) {
     const { roomId } = req.params;
 
-    const room = await redis.hGetAll(`room:${roomId}`);
+    const room = await redis.hGetAll(roomId);
 
     if (Object.keys(room).length === 0 || !room) {
       return res.status(404).json(

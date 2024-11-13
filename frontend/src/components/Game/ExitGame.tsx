@@ -28,7 +28,13 @@ function ExitGame({ children, handleExit }: ExitGameProps) {
           </DialogDescription>
         </DialogHeader>
         <div className="flex w-full justify-between">
-          <Button variant={"gameBtn"} onClick={handleExit}>
+          <Button
+            variant={"gameBtn"}
+            onClick={() => {
+              handleExit();
+              setOpen(false);
+            }}
+          >
             Exit
           </Button>
           <Button

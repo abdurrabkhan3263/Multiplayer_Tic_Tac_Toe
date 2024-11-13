@@ -19,7 +19,7 @@ interface PlayerWinProps {
 }
 
 function PlayerWin({ roomId, open, setOpenDialog }: PlayerWinProps) {
-  const socket = useSocket();
+  const { socket } = useSocket();
   const navigate = useNavigate();
 
   const handleGoToHome = () => {

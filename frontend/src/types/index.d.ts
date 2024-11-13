@@ -44,7 +44,6 @@ export declare type GameData = {
 export declare type ToggleTurn = {
   boxId: number;
   turn: string;
-  userId: string;
 };
 
 export declare type GameComplete = {

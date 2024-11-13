@@ -6,7 +6,6 @@ import RoomForm from "./RoomForm";
 import { useToast } from "@/hooks/use-toast";
 import { io } from "socket.io-client";
 import { useNavigate } from "react-router-dom";
-import { useRoomContext } from "@/context/RoomContext";
 import { GameError } from "@/types";
 
 interface RoomElemProps {
@@ -33,7 +32,6 @@ function RoomElem({
   const [searchingToAnotherUser, setSearchingToAnotherUser] =
     React.useState(false);
   const navigate = useNavigate();
-  const { setUserId, setRoomId, setRoom } = useRoomContext();
   const [dialogOpen, setDialogOpen] = React.useState(false);
 
   const handleEnterRoom = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -90,7 +88,6 @@ function RoomElem({
   };
 
   const handleMatchFound = (data: { roomName: string }) => {
-    console.log("Match found", data);
     toast({
       title: "Match Found",
       description: `You are matched with another player in ${data.roomName}`,
@@ -102,12 +99,6 @@ function RoomElem({
     socket.on("game_error", handleGameError);
     socket.on("match_found", handleMatchFound);
   }, [navigate, socket, toast]);
-
-  useEffect(() => {
-    setUserId(userId);
-    setRoomId(roomId);
-    setRoom(name);
-  }, [userId, roomId, name, setUserId, setRoomId, setRoom]);
 
   return (
     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

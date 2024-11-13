@@ -1,13 +1,11 @@
-import { User } from "@/types";
-import { createContext, useState, useContext } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { getRoomById } from "@/lib/action/room.action";
+import { createContext, useState, useContext, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 
 interface RoomContextType {
   roomName: string;
   roomId: string;
-  user: User | null;
-  setRoomId: React.Dispatch<React.SetStateAction<string>>;
-  setUser: React.Dispatch<React.SetStateAction<User | null>>;
-  setRoomName: React.Dispatch<React.SetStateAction<string>>;
 }
 
 interface RoomProviderProps {
@@ -16,53 +14,49 @@ interface RoomProviderProps {
 
 export const RoomContext = createContext<RoomContextType>({
   roomId: "",
-  user: null,
   roomName: "",
-  setRoomId: () => {},
-  setUser: () => {},
-  setRoomName: () => {},
 });
 
 export const useRoomContext = () => useContext(RoomContext);
 
 const RoomProvider: React.FC<RoomProviderProps> = ({ children }) => {
   const [roomId, setRoomId] = useState<string>("");
-  const [user, setUser] = useState<User | null>(null);
   const [roomName, setRoomName] = useState<string>("");
-  // const socket = useSocket();
-  // const { toast } = useToast();
-  // const navigate = useNavigate();
+  const { toast } = useToast();
+  const dbRef = useRef<IDBDatabase | null>(null);
+  const navigate = useNavigate();
 
-  // useEffect(() => {
-  //   if (socket && roomId && userId) {
-  //     socket.emit("rejoin_into_room", {
-  //       roomName,
-  //       userId,
-  //       roomId,
-  //     });
-  //   }
+  useEffect(() => {
+    (async () => {
+      const roomId = window.location.pathname.split("/").pop();
+      try {
+        const findRoom = await getRoomById({ roomId: roomId ?? "" });
 
-  //   const handlePlayerLeft = () => {
-  //     toast({
-  //       title: "Error",
-  //       description: "Player left the game",
-  //       variant: "destructive",
-  //     });
-  //     navigate("/home");
-  //   };
+        if (findRoom?.data) {
+          setRoomId(findRoom?.data?.roomId ?? "");
+          setRoomName(findRoom?.data?.roomName ?? "");
+        } else {
+          navigate("/home");
+        }
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: (error as Error)?.message ?? "Something went wrong",
+          variant: "destructive",
+        });
+        navigate("/home");
+      }
 
-  //   socket.on("player_left", handlePlayerLeft);
-
-  //   return () => {
-
-  //     socket.off("player_left", handlePlayerLeft);
-  //   };
-  // }, [navigate, roomId, roomName, socket, toast, userId]);
+      return () => {
+        if (dbRef.current) {
+          dbRef.current.close();
+        }
+      };
+    })();
+  }, [navigate, setRoomId, setRoomName, toast]);
 
   return (
-    <RoomContext.Provider
-      value={{ roomId, user, roomName, setRoomId, setUser, setRoomName }}
-    >
+    <RoomContext.Provider value={{ roomId, roomName }}>
       {children}
     </RoomContext.Provider>
   );

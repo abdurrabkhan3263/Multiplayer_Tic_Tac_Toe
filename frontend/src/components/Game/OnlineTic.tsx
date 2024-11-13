@@ -9,9 +9,8 @@ import PlayerWin from "./PlayerWin";
 import { GameData, ToggleTurn, Turn, WinStatusType } from "@/types";
 
 function OnlineTic() {
-  const turn = useRef<Turn | null>();
-  const [uiTurn, setUiTurn] = useState<Turn | null>(null);
-  const gameData = useRef<GameData | null>(null);
+  const [turn, setTurn] = useState<Turn | null>(null);
+  const [gameData, setGameData] = useState<GameData | null>(null);
 
   const counter = useRef(0);
   const [openDialog, setOpenDialog] = useState(false);
@@ -22,8 +21,8 @@ function OnlineTic() {
   });
   const [leftDialog, setLeftDialog] = useState<boolean>(false);
   const navigate = useNavigate();
-  const socket = useSocket();
-  const { roomId, user } = useRoomContext();
+  const { socket, user } = useSocket();
+  const { roomId, roomName } = useRoomContext();
 
   const resetGame = () => {
     const boxes = document.querySelectorAll(".tic_tac_box");
@@ -63,27 +62,42 @@ function OnlineTic() {
     });
 
     if (isWin) {
+      const player = gameData?.turn;
+
+      if (!player) return;
+
       socket.emit("player_win", {
         roomId,
-        player: Object.keys(turn?.current ?? {})[0],
+        player,
       });
       setWinStatus({
+        isDraw: undefined,
         isWin: true,
-        player: Object.keys(turn?.current ?? {})[0],
+        playerId: player,
+        playerName: "Abdur Rab Khan",
       });
       setOpenDialog(true);
+    }
+
+    if (counter.current === 9) {
+      socket.emit("game_draw", { roomId });
     }
   };
 
   const AddDivElement = () => {
-    return `<div id="${turn.current ? Object.values(turn.current)[0] : ""}" class="toggle_item_inactive select-none">
+    const currentTurnValue: "X" | "O" | null =
+      gameData && gameData.turn ? gameData[gameData.turn] : null;
+
+    if (!currentTurnValue) return "";
+
+    return `<div id="${currentTurnValue}" class="toggle_item_inactive select-none">
     <div class=${cn("w-h-20 mx-2 h-20 overflow-hidden")}>
-      <img src="/${turn.current ? Object.values(turn.current)[0] : ""}.png" class="h-full w-full object-cover"/>
+      <img src="/${currentTurnValue.toLowerCase()}.png" class="h-full w-full object-cover"/>
     </div>`;
   };
 
   const handleTurn = (target: HTMLElement) => {
-    if (!turn.current || Object.keys(turn.current)[0] !== user?.userId) {
+    if (gameData?.turn !== user?.userId) {
       console.log("Not your turn");
       return;
     }
@@ -94,7 +108,7 @@ function OnlineTic() {
 
     socket.emit("player_turn", {
       roomId,
-      userId: Object.keys(turn.current)[0],
+      userId: gameData?.turn,
       boxId: index,
     });
   };
@@ -128,21 +142,6 @@ function OnlineTic() {
     };
   }, []);
 
-  // Socket Related
-
-  useEffect(() => {
-    const handlePlayerLeft = () => {
-      setLeftDialog(true);
-      console.log("Player left the game");
-    };
-
-    socket.on("player_left", handlePlayerLeft);
-
-    return () => {
-      socket.off("player_left", handlePlayerLeft);
-    };
-  }, [socket]);
-
   // Game Start
 
   useEffect(() => {
@@ -154,11 +153,11 @@ function OnlineTic() {
     // Handle Functions
 
     const gameStarted = (data: GameData) => {
-      gameData.current = data;
-      const currentTurnValue = data.turn;
+      console.log("Game Started", data);
+      const currentTurnValue: "X" | "O" = data[data.turn];
+      setTurn({ [data?.turn as string]: currentTurnValue });
 
-      turn.current = { [currentTurnValue]: data[currentTurnValue] };
-      setUiTurn(turn.current);
+      setGameData(data);
     };
 
     const handleGameWin = () => {
@@ -179,21 +178,30 @@ function OnlineTic() {
       });
     };
 
-    const handleTurn = ({ boxId, turn, userId }: ToggleTurn) => {
+    const handleTurn = ({ boxId, turn }: ToggleTurn) => {
+      if (!gameData) return;
+
       const boxes = document.querySelectorAll(".tic_tac_box");
       const boxArray = Array.from(boxes);
 
       boxArray[boxId].innerHTML = AddDivElement();
       counter.current += 1;
 
-      const nextTurn = { [userId]: gameData.current?.turn };
-      turn.current = nextTurn as Turn;
-      setUiTurn(nextTurn);
+      const nextTurn = {
+        [turn]: gameData ? (gameData[turn] as "X" | "O") : "X",
+      };
+      setTurn(nextTurn);
+
+      setGameData((prev) => ({
+        ...prev,
+        turn: gameData[turn],
+      }));
 
       checkIsWin();
-      if (counter.current === 9) {
-        socket.emit("game_draw", { roomId });
-      }
+    };
+
+    const handlePlayerLeft = () => {
+      setLeftDialog(true);
     };
 
     // Socket Events
@@ -202,14 +210,23 @@ function OnlineTic() {
     socket.on("game_win", handleGameWin);
     socket.on("game_draw", handleGameDraw);
     socket.on("player_turn", handleTurn);
+    socket.on("player_left", handlePlayerLeft);
+
+    // Clean up
 
     return () => {
       socket.off("game_started", gameStarted);
       socket.off("game_win", handleGameWin);
       socket.off("game_draw", handleGameDraw);
       socket.off("player_turn", handleTurn);
+      socket.off("player_left", handlePlayerLeft);
     };
   }, [roomId, socket, user]);
+
+  useEffect(() => {
+    console.log("Turn is:- ", turn);
+    console.log("Game Data is:- ", gameData);
+  }, [gameData, turn]);
 
   return (
     <>

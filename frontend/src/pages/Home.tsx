@@ -3,21 +3,18 @@ import { Button } from "@/components/ui/button";
 import { Edit, Users, Volume2 } from "lucide-react";
 import { BsLaptop } from "react-icons/bs";
 import { useToast } from "@/hooks/use-toast";
-import { DB_NAME } from "@/lib/constants";
-import { useEffect, useRef, useState } from "react";
-import { User } from "@/types";
-import { addUser, getUser, updateUser } from "@/lib/action/user.action";
-import { AxiosError } from "axios";
+import { useState } from "react";
+import { addUser, updateUser } from "@/lib/action/user.action";
 import { useNavigate } from "react-router-dom";
 import UserNameSection from "@/components/UserNameSection";
+import { useSocket } from "@/context/SocketProvider";
 
 function Home() {
   const { toast } = useToast();
-  const dbRef = useRef<IDBDatabase | null>(null);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [IsAddingUser, setIsAddingUser] = useState(false);
   const [nameDialogOpen, setNameDialogOpen] = useState(false);
   const navigate = useNavigate();
+  const { user, setUser, dbRef } = useSocket();
 
   const handlePlayWithFriends = () => {
     if (!currentUser) {
@@ -69,91 +66,6 @@ function Home() {
     }
   };
 
-  useEffect(() => {
-    const request = indexedDB.open(DB_NAME, 3);
-
-    request.onupgradeneeded = (event) => {
-      const db = (event.target as IDBOpenDBRequest).result;
-      if (!db.objectStoreNames.contains("currentUser")) {
-        const currentUserS = db.createObjectStore("currentUser", {
-          keyPath: "userId",
-        });
-        currentUserS.createIndex("userName", "userName", { unique: true });
-        currentUserS.createIndex(
-          "tic_tac_toe_high_score",
-          "tic_tac_toe_high_score",
-          { unique: false },
-        );
-      }
-    };
-
-    request.onsuccess = async () => {
-      dbRef.current = request.result;
-      const transaction = dbRef.current.transaction("currentUser", "readonly");
-      const store = transaction.objectStore("currentUser");
-
-      dbRef.current.onversionchange = () => {
-        dbRef.current?.close();
-        toast({
-          title: "Database is outdated",
-          description: "Please refresh the page",
-          variant: "destructive",
-        });
-      };
-
-      store.getAll().onsuccess = async (event) => {
-        const users = (event.target as IDBRequest).result as User[];
-        setCurrentUser(users[0]);
-
-        if (users.length > 0) {
-          try {
-            await getUser({ userId: users[0].userId });
-          } catch (error) {
-            const AxiosError = error as AxiosError;
-            if (AxiosError.status === 404) {
-              const newUser = await insertNewUser({
-                userName: users[0].userName,
-                userId: users[0].userId,
-              });
-
-              if (newUser && dbRef.current) {
-                const transaction = dbRef.current.transaction(
-                  "currentUser",
-                  "readwrite",
-                );
-                const store = transaction.objectStore("currentUser");
-                const cursorRequest = store.openCursor();
-
-                cursorRequest.onsuccess = (event) => {
-                  const cursor = (event.target as IDBRequest).result;
-
-                  if (cursor) {
-                    const updatedValue = {
-                      ...cursor.value,
-                      ...newUser,
-                      userId: cursor.value.userId,
-                    };
-                    const updateRequest = cursor.update(updatedValue);
-
-                    updateRequest.onsuccess = () => {
-                      setCurrentUser(newUser);
-                    };
-
-                    updateRequest.onerror = () => {
-                      console.error("Error updating user in IndexedDB");
-                    };
-
-                    cursor.continue();
-                  }
-                };
-              }
-            }
-          }
-        }
-      };
-    };
-  }, []);
-
   const handleAddUser = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -171,8 +83,8 @@ function Home() {
         return;
       }
 
-      if (currentUser) {
-        await updateUserName({ userId: currentUser.userId, userName });
+      if (user) {
+        await updateUserName({ userId: user.userId, userName });
 
         if (
           dbRef.current &&
@@ -184,10 +96,10 @@ function Home() {
           );
           const store = transaction.objectStore("currentUser");
 
-          store.put({ ...currentUser, userName });
+          store.put({ ...user, userName });
 
           transaction.oncomplete = () => {
-            setCurrentUser({ ...currentUser, userName });
+            setUser({ ...user, userName });
           };
 
           transaction.onerror = () => {
@@ -214,7 +126,7 @@ function Home() {
           store.add(newUser);
 
           transaction.oncomplete = () => {
-            setCurrentUser(newUser);
+            setUser(newUser);
           };
 
           transaction.onerror = () => {
@@ -243,7 +155,7 @@ function Home() {
           <UserNameSection
             handleAddUser={handleAddUser}
             IsAddingUser={IsAddingUser}
-            user={currentUser}
+            user={user}
             nameDialogOpen={nameDialogOpen}
             setNameDialogOpen={setNameDialogOpen}
           >
@@ -269,7 +181,7 @@ function Home() {
             <JoinRoom
               handleAddUser={handleAddUser}
               IsAddingUser={IsAddingUser}
-              user={currentUser}
+              user={user}
               nameDialogOpen={nameDialogOpen}
               setNameDialogOpen={setNameDialogOpen}
             >
