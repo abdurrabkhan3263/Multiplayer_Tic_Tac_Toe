@@ -31,12 +31,9 @@ function UserNameSection({
 }: UserNameSectionProps) {
   const [inputUserName, setInputUserName] = useState("");
 
-  const handleSpace = useCallback(
-    (elem: string) => {
-      return elem.replace(/\s/g, "_");
-    },
-    [inputUserName],
-  );
+  const handleSpace = useCallback((elem: string) => {
+    return elem.replace(/\s/g, "_");
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target;

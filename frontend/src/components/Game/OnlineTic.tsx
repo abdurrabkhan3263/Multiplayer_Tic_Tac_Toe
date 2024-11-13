@@ -6,23 +6,23 @@ import { useSocket } from "@/context/SocketProvider";
 import { useNavigate } from "react-router-dom";
 import PlayerLeft from "./PlayerLeft";
 import PlayerWin from "./PlayerWin";
-import { GameData, Turn } from "@/types";
+import { GameData, ToggleTurn, Turn, WinStatusType } from "@/types";
 
-function OnlineTic({ user }: { user: User }) {
-  const turn = useRef<Turn | null>();
-  const [uiTurn, setUiTurn] = useState<Turn | null>(null);
-  const gameData = useRef<GameData | null>(null);
+function OnlineTic() {
+  const [turn, setTurn] = useState<Turn | null>(null);
+  const [gameData, setGameData] = useState<GameData | null>(null);
 
   const counter = useRef(0);
   const [openDialog, setOpenDialog] = useState(false);
-  const [winStatus, setWinStatus] = useState({
-    isWin: false,
-    player: "",
+  const [winStatus, setWinStatus] = useState<WinStatusType>({
+    isDraw: undefined,
+    isWin: undefined,
+    playerName: "",
   });
   const [leftDialog, setLeftDialog] = useState<boolean>(false);
   const navigate = useNavigate();
-  const socket = useSocket();
-  const { roomId, user, roomName } = useRoomContext();
+  const { socket, user } = useSocket();
+  const { roomId, roomName } = useRoomContext();
 
   const resetGame = () => {
     const boxes = document.querySelectorAll(".tic_tac_box");
@@ -62,37 +62,55 @@ function OnlineTic({ user }: { user: User }) {
     });
 
     if (isWin) {
+      const player = gameData?.turn;
+
+      if (!player) return;
+
+      socket.emit("player_win", {
+        roomId,
+        player,
+      });
       setWinStatus({
+        isDraw: undefined,
         isWin: true,
-        player: turn.current,
+        playerId: player,
+        playerName: "Abdur Rab Khan",
       });
       setOpenDialog(true);
+    }
+
+    if (counter.current === 9) {
+      socket.emit("game_draw", { roomId });
     }
   };
 
   const AddDivElement = () => {
-    return `<div id="${turn.current}" class="toggle_item_inactive select-none">
+    const currentTurnValue: "X" | "O" | null =
+      gameData && gameData.turn ? gameData[gameData.turn] : null;
+
+    if (!currentTurnValue) return "";
+
+    return `<div id="${currentTurnValue}" class="toggle_item_inactive select-none">
     <div class=${cn("w-h-20 mx-2 h-20 overflow-hidden")}>
-      <img src="/${turn.current}.png" class="h-full w-full object-cover"/>
+      <img src="/${currentTurnValue.toLowerCase()}.png" class="h-full w-full object-cover"/>
     </div>`;
   };
 
   const handleTurn = (target: HTMLElement) => {
-    target.innerHTML = AddDivElement();
-    target.firstElementChild?.classList.replace(
-      "toggle_item_inactive",
-      "toggle_item_active",
-    );
-    counter.current += 1;
-
-    if (counter.current >= 3) {
-      checkIsWin();
-    }
-    if (counter.current === 9) {
-      setOpenDialog(true);
+    if (gameData?.turn !== user?.userId) {
+      console.log("Not your turn");
+      return;
     }
 
-    toggleTurn();
+    const index = target.parentElement
+      ? Array.from(target.parentElement.children).indexOf(target)
+      : -1;
+
+    socket.emit("player_turn", {
+      roomId,
+      userId: gameData?.turn,
+      boxId: index,
+    });
   };
 
   const handleClick = (e: MouseEvent) => {
@@ -124,21 +142,6 @@ function OnlineTic({ user }: { user: User }) {
     };
   }, []);
 
-  // Socket Related
-
-  useEffect(() => {
-    const handlePlayerLeft = () => {
-      setLeftDialog(true);
-      console.log("Player left the game");
-    };
-
-    socket.on("player_left", handlePlayerLeft);
-
-    return () => {
-      socket.off("player_left", handlePlayerLeft);
-    };
-  }, [socket]);
-
   // Game Start
 
   useEffect(() => {
@@ -150,16 +153,55 @@ function OnlineTic({ user }: { user: User }) {
     // Handle Functions
 
     const gameStarted = (data: GameData) => {
-      console.log("User id is:- ", user);
       console.log("Game Started", data);
+      const currentTurnValue: "X" | "O" = data[data.turn];
+      setTurn({ [data?.turn as string]: currentTurnValue });
+
+      setGameData(data);
     };
 
-    const handleGameWin = (data) => {
-      console.log("Game Win", data);
+    const handleGameWin = () => {
+      console.log("Game Win");
+      setWinStatus({
+        isDraw: undefined,
+        isWin: true,
+        playerName: "Abdur Rab Khan",
+      });
     };
 
-    const handleGameDraw = (data) => {
-      console.log("Game Draw", data);
+    const handleGameDraw = () => {
+      console.log("Game Draw");
+      setWinStatus({
+        isDraw: true,
+        isWin: undefined,
+        playerName: "",
+      });
+    };
+
+    const handleTurn = ({ boxId, turn }: ToggleTurn) => {
+      if (!gameData) return;
+
+      const boxes = document.querySelectorAll(".tic_tac_box");
+      const boxArray = Array.from(boxes);
+
+      boxArray[boxId].innerHTML = AddDivElement();
+      counter.current += 1;
+
+      const nextTurn = {
+        [turn]: gameData ? (gameData[turn] as "X" | "O") : "X",
+      };
+      setTurn(nextTurn);
+
+      setGameData((prev) => ({
+        ...prev,
+        turn: gameData[turn],
+      }));
+
+      checkIsWin();
+    };
+
+    const handlePlayerLeft = () => {
+      setLeftDialog(true);
     };
 
     // Socket Events
@@ -167,12 +209,24 @@ function OnlineTic({ user }: { user: User }) {
     socket.on("game_started", gameStarted);
     socket.on("game_win", handleGameWin);
     socket.on("game_draw", handleGameDraw);
+    socket.on("player_turn", handleTurn);
+    socket.on("player_left", handlePlayerLeft);
+
+    // Clean up
 
     return () => {
       socket.off("game_started", gameStarted);
       socket.off("game_win", handleGameWin);
+      socket.off("game_draw", handleGameDraw);
+      socket.off("player_turn", handleTurn);
+      socket.off("player_left", handlePlayerLeft);
     };
-  }, [socket, user]);
+  }, [roomId, socket, user]);
+
+  useEffect(() => {
+    console.log("Turn is:- ", turn);
+    console.log("Game Data is:- ", gameData);
+  }, [gameData, turn]);
 
   return (
     <>
@@ -181,7 +235,7 @@ function OnlineTic({ user }: { user: User }) {
         openDialog={openDialog}
         resetGame={resetGame}
         winStatus={winStatus}
-        uiTurn={uiTurn}
+        uiTurn={turn.current ? (Object.values(turn.current)[0] as string) : ""}
         setOpenDialog={setOpenDialog}
         handleExitBtn={handleExitBtn}
       />

@@ -122,6 +122,7 @@ function OfflineTic() {
     resetGame();
     navigate("/home");
   };
+
   return (
     <GameBoard
       counter={counter}

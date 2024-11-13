@@ -62,7 +62,7 @@ export default class SocketController {
           });
         }
 
-        console.log("user disconnected:", socket.id);
+        this.customIdToSocketId.delete(socket.id);
       });
     });
   }
@@ -140,7 +140,6 @@ export default class SocketController {
 
       socket.join(roomId);
       this.joinedEmitter(socket, roomId);
-      this.handleRegister({ socketId: socket.id, userId });
 
       if (updateRoom === null || updateRoom === undefined) {
         this.emitGameError({
@@ -195,21 +194,26 @@ export default class SocketController {
 
     socket.join(roomId);
     this.joinedEmitter(socket, roomId);
-    this.handleRegister({ socketId: socket.id, userId: user.userId });
   }
 
   //  method for handling game logic
 
   async playGame() {
     this.connection((socket: Socket) => {
-      // Handle Player Rejoin into room
-      this.handlePlayerRejoin(socket);
+      // Handle Registering
+      this.handleRegister(socket);
 
       // Handle Joining into CustomRoom room
       this.handleJoinIntoCustomRoom(socket);
 
       // Handle Joining into room
       this.handleJoinIntoRoom(socket);
+
+      // Handle Player Win or Lose
+      this.handlePlayerWin(socket);
+
+      // Handle Player Draw
+      this.handlePlayerDraw(socket);
 
       // Handle Player Left
       this.handlePlayerLeft(socket);
@@ -225,9 +229,6 @@ export default class SocketController {
 
       // Handle Chatting
       this.handleChatting(socket);
-
-      // Handle Player Left
-      this.handlePlayerLeft(socket);
     });
   }
 
@@ -238,13 +239,6 @@ export default class SocketController {
       socket,
       "join_into_custom_room",
       async ({ userId, roomName, password, id }: JoinRoom) => {
-        console.log(
-          { userId },
-          "Joining into custom room",
-          roomName,
-          password,
-          id
-        );
         if (!userId || !roomName || !password || !id) {
           this.emitGameError({
             socket,
@@ -376,49 +370,20 @@ export default class SocketController {
     this.emitNumberOfClient(socket, roomName);
   }
 
-  private handlePlayerRejoin(socket: Socket) {
-    this.on(socket, "rejoin_into_room", async ({ userId, roomId }) => {
-      const room = `room:${roomId}`;
-
-      const findThatRoom = await redis.hGetAll(room);
-
-      if (!findThatRoom) {
-        this.emitGameError({
-          socket,
-          message: "Room not found or room is expired",
-          data: { roomId },
-        });
-        return;
-      }
-
-      const activeUser = JSON.parse(findThatRoom.activeUsers);
-
-      if (activeUser.includes(userId)) {
-        socket.join(room);
-        this.handleRegister({ socketId: socket.id, userId });
-        this.joinedEmitter(socket, room);
-      } else {
-        this.emitGameError({
-          socket,
-          message: "User not found in room",
-          data: { roomId },
-        });
-      }
-    });
-  }
-
   // TODO : Refactor this method --> Decide how to handle the game logic or event
 
   private handlePlayEvent(socket: Socket) {
     this.on(
       socket,
-      "game_playing",
-      async ({ roomId, userId, data }: PlayGame) => {
+      "player_turn",
+      async ({ roomId, boxId, userId }: PlayGame) => {
         const getNumberOfClient = this.getNumberOfClient(roomId);
         const getNumberOfClientArray = Array.from(getNumberOfClient);
 
         const player1 = this.customIdToSocketId.get(getNumberOfClientArray[0]);
         const player2 = this.customIdToSocketId.get(getNumberOfClientArray[1]);
+
+        console.log({ player1, player2 });
 
         if (!player1 || !player2) {
           throw new ApiError({
@@ -427,11 +392,12 @@ export default class SocketController {
           });
         }
 
-        data.turn = data.turn === player2 || !data.turn ? player1 : player2;
+        const turn = userId === player1 ? player2 : player1;
 
-        if (getNumberOfClient.size === 2) {
-          this.emitToRoom(roomId, "game_playing", data);
-        }
+        this.emitToRoom(roomId, "player_turn", {
+          roomId,
+          data: { boxId, turn },
+        });
       }
     );
   }
@@ -446,20 +412,25 @@ export default class SocketController {
       const player1 = this.customIdToSocketId.get(getNumberOfClientArray[0]);
       const player2 = this.customIdToSocketId.get(getNumberOfClientArray[1]);
 
+      console.log({ player1, player2 });
+      console.log("User is:- ", this.customIdToSocketId);
+
       const randomPlayer = Math.floor(Math.random() * 2);
-      const gameVal = randomPlayer === 0 ? "X" : "O";
+      const player1TurnValue = randomPlayer === 0 ? "X" : "O";
+      const player2TurnValue = player1TurnValue === "X" ? "O" : "X";
 
       if (!player1 || !player2) {
-        throw new ApiError({
-          status: 400,
+        socket.emit("game_error", {
+          success: false,
           message: "Players not found",
         });
+        return;
       }
 
       const data = {
-        [player1]: gameVal,
-        [player2]: gameVal === "X" ? "O" : "X",
-        roomId,
+        [player1]: player1TurnValue,
+        [player2]: player2TurnValue,
+        turn: [player1, player2][randomPlayer],
       };
 
       this.emitToRoom(roomId, "game_started", data);
@@ -467,11 +438,8 @@ export default class SocketController {
   }
 
   private handlePlayerLeft(socket: Socket) {
-    console.log("Player left the room");
     this.on(socket, "player_left", ({ roomId }) => {
-      console.log("Player left the room", { roomId });
       this.EmitPlayerLeft(socket, roomId);
-
       this.leaveRoom(socket, roomId);
     });
   }
@@ -486,20 +454,43 @@ export default class SocketController {
     });
   }
 
+  private handlePlayerWin(socket: Socket) {
+    this.on(socket, "player_win", ({ roomId, userId }) => {
+      const winnerPlayerSocketId = this.customIdToSocketId.get(userId);
+      const looserPlayerSocketId = Array.from(this.customIdToSocketId).find(
+        (player) => player[1] !== userId
+      );
+
+      if (!winnerPlayerSocketId || !looserPlayerSocketId) {
+        throw new ApiError({
+          status: 400,
+          message: "Players not found",
+        });
+      }
+
+      this.socket.to(winnerPlayerSocketId).emit("game_win");
+
+      this.socket.to(looserPlayerSocketId[1]).emit("game_lose");
+    });
+  }
+
+  private handlePlayerDraw(socket: Socket) {
+    this.on(socket, "player_draw", ({ roomId }) => {
+      this.emitGameDraw(socket, roomId);
+    });
+  }
+
   private handleChatting(socket: Socket) {
     this.on(socket, "chat", ({ userName, msg, roomName }) => {
       this.emitToRoom(roomName, "chat", { userName, msg });
     });
   }
 
-  private handleRegister({
-    socketId,
-    userId,
-  }: {
-    socketId: string;
-    userId: string;
-  }) {
-    this.customIdToSocketId.set(socketId, userId);
+  private handleRegister(socket: Socket) {
+    this.on(socket, "register", ({ userId }: { userId: string }) => {
+      if (!userId) return;
+      this.customIdToSocketId.set(socket.id, userId);
+    });
   }
 
   private async emitNumberOfClient(socket: Socket, roomName: string) {

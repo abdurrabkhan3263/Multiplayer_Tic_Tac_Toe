@@ -17,7 +17,7 @@ function QuickMatchSection({ user }: QuickMatchProps) {
   const [matchSearchingDialog, setMatchSearchingDialog] = React.useState(false);
   const roomId = useRef<{ roomName: string } | null>(null);
   const navigate = useNavigate();
-  const socket = useSocket();
+  const { socket } = useSocket();
 
   const handleQuickMatch = async () => {
     try {

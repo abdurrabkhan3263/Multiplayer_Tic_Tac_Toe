@@ -55,8 +55,8 @@ export declare type GameData = {
 
 export declare type PlayGame = {
   roomId: string;
+  boxId: number;
   userId: string;
-  data: any;
 };
 
 export declare type GameStart = {

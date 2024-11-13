@@ -24,7 +24,7 @@ function PlayerLeft({
   setOpenDialog,
   resetGame,
 }: PlayerLeftProps) {
-  const socket = useSocket();
+  const { socket } = useSocket();
   const navigate = useNavigate();
 
   const handleGoToHome = () => {
