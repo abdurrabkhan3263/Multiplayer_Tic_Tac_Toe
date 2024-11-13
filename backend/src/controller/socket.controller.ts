@@ -377,13 +377,14 @@ export default class SocketController {
       socket,
       "player_turn",
       async ({ roomId, boxId, userId }: PlayGame) => {
+        console.log({ roomId, boxId, userId });
         const getNumberOfClient = this.getNumberOfClient(roomId);
         const getNumberOfClientArray = Array.from(getNumberOfClient);
 
         const player1 = this.customIdToSocketId.get(getNumberOfClientArray[0]);
         const player2 = this.customIdToSocketId.get(getNumberOfClientArray[1]);
 
-        console.log({ player1, player2 });
+        console.log(getNumberOfClient, getNumberOfClientArray);
 
         if (!player1 || !player2) {
           throw new ApiError({
@@ -395,8 +396,8 @@ export default class SocketController {
         const turn = userId === player1 ? player2 : player1;
 
         this.emitToRoom(roomId, "player_turn", {
-          roomId,
-          data: { boxId, turn },
+          boxId,
+          turn,
         });
       }
     );

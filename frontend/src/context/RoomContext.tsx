@@ -1,9 +1,12 @@
 import { useToast } from "@/hooks/use-toast";
 import { getRoomById } from "@/lib/action/room.action";
+import { DB_NAME } from "@/lib/constants";
+import { User } from "@/types";
 import { createContext, useState, useContext, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
 interface RoomContextType {
+  user: User | null;
   roomName: string;
   roomId: string;
 }
@@ -13,6 +16,7 @@ interface RoomProviderProps {
 }
 
 export const RoomContext = createContext<RoomContextType>({
+  user: "",
   roomId: "",
   roomName: "",
 });
@@ -22,6 +26,7 @@ export const useRoomContext = () => useContext(RoomContext);
 const RoomProvider: React.FC<RoomProviderProps> = ({ children }) => {
   const [roomId, setRoomId] = useState<string>("");
   const [roomName, setRoomName] = useState<string>("");
+  const [user, setUser] = useState<User | null>(null);
   const { toast } = useToast();
   const dbRef = useRef<IDBDatabase | null>(null);
   const navigate = useNavigate();
@@ -55,8 +60,32 @@ const RoomProvider: React.FC<RoomProviderProps> = ({ children }) => {
     })();
   }, [navigate, setRoomId, setRoomName, toast]);
 
+  useEffect(() => {
+    const request = indexedDB.open(DB_NAME, 3);
+
+    request.onsuccess = async () => {
+      dbRef.current = request.result;
+      const transaction = dbRef.current.transaction("currentUser", "readonly");
+      const store = transaction.objectStore("currentUser");
+
+      dbRef.current.onversionchange = () => {
+        dbRef.current?.close();
+        toast({
+          title: "Database is outdated",
+          description: "Please refresh the page",
+          variant: "destructive",
+        });
+      };
+
+      store.getAll().onsuccess = async (event) => {
+        const users = (event.target as IDBRequest).result as User[];
+        setUser(users[0]);
+      };
+    };
+  }, [toast]);
+
   return (
-    <RoomContext.Provider value={{ roomId, roomName }}>
+    <RoomContext.Provider value={{ roomId, roomName, user }}>
       {children}
     </RoomContext.Provider>
   );
