@@ -14,10 +14,10 @@ export declare type Room = {
 };
 
 export declare type WinStatusType = {
-  isDraw: boolean | undefined;
-  isWin: boolean | undefined;
-  playerName: string;
+  isDraw?: boolean;
+  isWin?: boolean;
   playerId?: string;
+  [key: string]: string;
 };
 
 export const enum ROOM_TYPE {

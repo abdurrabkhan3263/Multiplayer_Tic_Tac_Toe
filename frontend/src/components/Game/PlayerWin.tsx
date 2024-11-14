@@ -24,12 +24,12 @@ function PlayerWin({ roomId, open, setOpenDialog }: PlayerWinProps) {
 
   const handleGoToHome = () => {
     navigate("/home");
-    setOpenDialog({ isWin: undefined, isDraw: undefined, playerName: "" });
+    setOpenDialog({});
     socket.emit("player_left", { roomId });
   };
 
   const handlePlayAgain = () => {
-    setOpenDialog({ isWin: undefined, isDraw: undefined, playerName: "" });
+    setOpenDialog({});
   };
 
   return (
@@ -38,10 +38,9 @@ function PlayerWin({ roomId, open, setOpenDialog }: PlayerWinProps) {
       onOpenChange={() => {
         if (open.isWin || open.isDraw) {
           setOpenDialog({
-            isWin: open.isWin,
-            isDraw: open.isDraw,
-            playerName: "",
-          });
+            isWin: open?.isWin ?? undefined,
+            isDraw: open?.isDraw ?? undefined,
+          } as WinStatusType);
         }
       }}
     >

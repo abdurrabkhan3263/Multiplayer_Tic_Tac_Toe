@@ -377,14 +377,11 @@ export default class SocketController {
       socket,
       "player_turn",
       async ({ roomId, boxId, userId }: PlayGame) => {
-        console.log({ roomId, boxId, userId });
         const getNumberOfClient = this.getNumberOfClient(roomId);
         const getNumberOfClientArray = Array.from(getNumberOfClient);
 
         const player1 = this.customIdToSocketId.get(getNumberOfClientArray[0]);
         const player2 = this.customIdToSocketId.get(getNumberOfClientArray[1]);
-
-        console.log(getNumberOfClient, getNumberOfClientArray);
 
         if (!player1 || !player2) {
           throw new ApiError({
@@ -393,7 +390,13 @@ export default class SocketController {
           });
         }
 
-        const turn = userId === player1 ? player2 : player1;
+        let turn: string | null = null;
+
+        if (userId === player1) {
+          turn = player2;
+        } else if (userId === player2) {
+          turn = player1;
+        }
 
         this.emitToRoom(roomId, "player_turn", {
           boxId,
@@ -412,9 +415,6 @@ export default class SocketController {
 
       const player1 = this.customIdToSocketId.get(getNumberOfClientArray[0]);
       const player2 = this.customIdToSocketId.get(getNumberOfClientArray[1]);
-
-      console.log({ player1, player2 });
-      console.log("User is:- ", this.customIdToSocketId);
 
       const randomPlayer = Math.floor(Math.random() * 2);
       const player1TurnValue = randomPlayer === 0 ? "X" : "O";
@@ -456,22 +456,28 @@ export default class SocketController {
   }
 
   private handlePlayerWin(socket: Socket) {
-    this.on(socket, "player_win", ({ roomId, userId }) => {
-      const winnerPlayerSocketId = this.customIdToSocketId.get(userId);
-      const looserPlayerSocketId = Array.from(this.customIdToSocketId).find(
-        (player) => player[1] !== userId
-      );
+    this.on(socket, "player_win", ({ roomId, userId, playerName }) => {
+      const socketToUserId = Array.from(this.customIdToSocketId);
 
-      if (!winnerPlayerSocketId || !looserPlayerSocketId) {
-        throw new ApiError({
-          status: 400,
+      const winnerSocketId = socketToUserId.find(
+        ([socketId, id]) => id === userId
+      )?.[0];
+      const loserSocketId = socketToUserId.find(
+        ([socketId, id]) => id !== userId
+      )?.[0];
+
+      if (!winnerSocketId || !loserSocketId) {
+        socket.emit("game_error", {
+          success: false,
           message: "Players not found",
         });
+        return;
       }
 
-      this.socket.to(winnerPlayerSocketId).emit("game_win");
+      console.log({ winnerSocketId, loserSocketId });
 
-      this.socket.to(looserPlayerSocketId[1]).emit("game_lose");
+      this.io.to(winnerSocketId as string).emit("game_win");
+      this.io.to(loserSocketId as string).emit("game_lose");
     });
   }
 

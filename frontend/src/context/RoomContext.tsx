@@ -6,7 +6,7 @@ import { createContext, useState, useContext, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
 interface RoomContextType {
-  user: User | null;
+  user: User | undefined;
   roomName: string;
   roomId: string;
 }
@@ -16,7 +16,7 @@ interface RoomProviderProps {
 }
 
 export const RoomContext = createContext<RoomContextType>({
-  user: "",
+  user: undefined,
   roomId: "",
   roomName: "",
 });
@@ -26,7 +26,7 @@ export const useRoomContext = () => useContext(RoomContext);
 const RoomProvider: React.FC<RoomProviderProps> = ({ children }) => {
   const [roomId, setRoomId] = useState<string>("");
   const [roomName, setRoomName] = useState<string>("");
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | undefined>();
   const { toast } = useToast();
   const dbRef = useRef<IDBDatabase | null>(null);
   const navigate = useNavigate();
