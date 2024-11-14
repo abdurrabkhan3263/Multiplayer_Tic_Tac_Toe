@@ -6,6 +6,8 @@ import { useNavigate } from "react-router-dom";
 import PlayerLeft from "./PlayerLeft";
 import PlayerWin from "./PlayerWin";
 import { GameData, ToggleTurn, WinStatusType } from "@/types";
+import { DB_NAME, SCORE_INC } from "@/lib/constants";
+import { toast } from "@/hooks/use-toast";
 
 function OnlineTic() {
   const [gameData, setGameData] = useState<GameData | null>(null);
@@ -116,6 +118,58 @@ function OnlineTic() {
     navigate("/home");
   };
 
+  const handlePlayAgain = () => {
+    socket.emit("play_again", { roomId });
+  };
+
+  const increaseHighScore = async () => {
+    if (!user) return;
+
+    const highScore = user?.tic_tac_toe_high_score;
+    socket.emit("increase_high_score", {
+      userId: user.userId,
+      highScore: highScore,
+    });
+
+    const request = indexedDB.open(DB_NAME, 3);
+
+    request.onsuccess = async () => {
+      const db = request.result;
+      const transaction = db.transaction("currentUser", "readwrite");
+      const userStore = transaction.objectStore("currentUser");
+
+      userStore.openCursor().onsuccess = (event) => {
+        console.log("Cursor Event:: ", event);
+
+        const cursor = (event.target as IDBRequest).result;
+        if (cursor) {
+          console.log("User Store:: ", cursor.value);
+          const updatedUser = {
+            ...cursor.value,
+            tic_tac_toe_high_score: highScore + 1,
+          };
+          cursor.update(updatedUser);
+          socket.emit("increase_high_score", {
+            userId: user.userId,
+            score: SCORE_INC,
+          });
+        }
+      };
+
+      transaction.oncomplete = () => {
+        console.log("High Score Updated");
+      };
+
+      transaction.onerror = (error) => {
+        console.error("Error:: ", error);
+      };
+    };
+
+    request.onerror = (error) => {
+      console.error("Error:: ", error);
+    };
+  };
+
   // Event Listeners for boxes
 
   useEffect(() => {
@@ -149,6 +203,7 @@ function OnlineTic() {
     };
 
     const handleGameWin = ({ winner }: { winner: string }) => {
+      increaseHighScore();
       setWinStatus({
         isWin: true,
         isDraw: false,
@@ -203,6 +258,16 @@ function OnlineTic() {
       setLeftDialog(true);
     };
 
+    const handlePlayAgain = () => {
+      resetGame();
+      setWinStatus({
+        isWin: false,
+        isDraw: false,
+        isLose: false,
+        playerName: "",
+      });
+    };
+
     // Socket Events
 
     socket.on("game_started", gameStarted);
@@ -211,6 +276,7 @@ function OnlineTic() {
     socket.on("game_draw", handleGameDraw);
     socket.on("player_turn", handleTurn);
     socket.on("player_left", handlePlayerLeft);
+    socket.on("play_again", handlePlayAgain);
 
     // Clean up
 
@@ -221,6 +287,7 @@ function OnlineTic() {
       socket.off("game_draw", handleGameDraw);
       socket.off("player_turn", handleTurn);
       socket.off("player_left", handlePlayerLeft);
+      socket.off("play_again", handlePlayAgain);
     };
   }, [AddDivElement, checkIsWin, gameData, roomId, socket, user]);
 
@@ -242,6 +309,7 @@ function OnlineTic() {
         setOpenDialog={
           setWinStatus as React.Dispatch<React.SetStateAction<WinStatusType>>
         }
+        handlePlayAgain={handlePlayAgain}
       />
     </>
   );

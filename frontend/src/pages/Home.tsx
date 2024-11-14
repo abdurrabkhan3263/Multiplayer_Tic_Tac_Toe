@@ -85,7 +85,6 @@ function Home() {
 
       if (user) {
         await updateUserName({ userId: user.userId, userName });
-
         if (
           dbRef.current &&
           dbRef.current.objectStoreNames.contains("currentUser")

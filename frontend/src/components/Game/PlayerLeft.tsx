@@ -36,8 +36,6 @@ function PlayerLeft({
     });
   };
 
-  const handlePlayAgain = () => {};
-
   return (
     <Dialog
       open={open}
@@ -58,9 +56,9 @@ function PlayerLeft({
           <Button variant={"gameBtn"} onClick={handleGoToHome}>
             Go Home <Home />
           </Button>
-          <Button variant={"gameBtn"} onClick={handlePlayAgain}>
+          {/* <Button variant={"gameBtn"} onClick={handlePlayAgain}>
             Play Again <Repeat />
-          </Button>
+          </Button> */}
         </div>
       </DialogContent>
     </Dialog>

@@ -7,29 +7,21 @@ export const addUser = async ({
   userName: string;
   userId?: string;
 }) => {
-  try {
-    const response = await axios.post(`/api/user`, { userName, userId });
+  const response = await axios.post(`/api/user`, { userName, userId });
 
-    if (response.statusText !== "OK") {
-      throw new Error(response.data?.message || "Failed to add user");
-    }
-    return response.data;
-  } catch (error) {
-    throw error;
+  if (response.statusText !== "OK") {
+    throw new Error(response.data?.message || "Failed to add user");
   }
+  return response.data;
 };
 
 export const getUser = async ({ userId }: { userId: string }) => {
-  try {
-    const response = await axios.get(`/api/user/${userId}`);
+  const response = await axios.get(`/api/user/${userId}`);
 
-    if (response.status !== 200) {
-      throw new Error(response.data?.message || "Failed to get user");
-    }
-    return response.data;
-  } catch (error) {
-    throw error;
+  if (response.status !== 200) {
+    throw new Error(response.data?.message || "Failed to get user");
   }
+  return response.data;
 };
 
 export const updateUser = async ({
@@ -39,14 +31,10 @@ export const updateUser = async ({
   userId: string;
   userName: string;
 }) => {
-  try {
-    const response = await axios.put(`/api/user/${userId}`, { userName });
+  const response = await axios.put(`/api/user/${userId}`, { userName });
 
-    if (response.statusText !== "OK") {
-      throw new Error(response.data?.message || "Failed to update user");
-    }
-    return response.data;
-  } catch (error) {
-    throw error;
+  if (response.statusText !== "OK") {
+    throw new Error(response.data?.message || "Failed to update user");
   }
+  return response.data;
 };

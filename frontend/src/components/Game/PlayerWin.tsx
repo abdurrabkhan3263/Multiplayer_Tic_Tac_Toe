@@ -16,9 +16,15 @@ interface PlayerWinProps {
   roomId: string;
   open: WinStatusType;
   setOpenDialog: React.Dispatch<React.SetStateAction<WinStatusType>>;
+  handlePlayAgain: () => void;
 }
 
-function PlayerWin({ roomId, open, setOpenDialog }: PlayerWinProps) {
+function PlayerWin({
+  roomId,
+  open,
+  setOpenDialog,
+  handlePlayAgain,
+}: PlayerWinProps) {
   const [message, setMessage] = React.useState<PlayerWinMessage>();
   const { socket } = useSocket();
   const navigate = useNavigate();
@@ -32,15 +38,6 @@ function PlayerWin({ roomId, open, setOpenDialog }: PlayerWinProps) {
       playerName: "",
     });
     socket.emit("player_left", { roomId });
-  };
-
-  const handlePlayAgain = () => {
-    setOpenDialog({
-      isWin: false,
-      isDraw: false,
-      isLose: false,
-      playerName: "",
-    });
   };
 
   useEffect(() => {

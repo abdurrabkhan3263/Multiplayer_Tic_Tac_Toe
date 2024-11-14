@@ -17,11 +17,16 @@ function GameBoard({ uiTurn, handleExitBtn }: GameBoardProps) {
           <div className="flex h-full w-full flex-col overflow-hidden rounded-xl bg-[#EEEEEE] p-2">
             <div className="flex h-fit flex-col">
               <div className="flex h-fit justify-between">
-                <ExitGame handleExit={handleExitBtn}>
-                  <Button variant={"coolBtn"}>
-                    <LogOut size={24} />
-                  </Button>
-                </ExitGame>
+                <div className="flex gap-3">
+                  <ExitGame handleExit={handleExitBtn}>
+                    <Button variant={"coolBtn"}>
+                      <LogOut size={24} />
+                    </Button>
+                  </ExitGame>
+                  <div>
+                    Score:: <span>0</span>
+                  </div>
+                </div>
                 <Button variant={"coolBtn"}>
                   <Volume2 size={24} />
                 </Button>

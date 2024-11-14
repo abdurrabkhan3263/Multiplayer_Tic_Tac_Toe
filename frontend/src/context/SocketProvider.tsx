@@ -90,6 +90,7 @@ const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
 
       store.getAll().onsuccess = async (event) => {
         const users = (event.target as IDBRequest).result as User[];
+        console.log(users);
         setUser(users[0]);
 
         if (users.length > 0) {

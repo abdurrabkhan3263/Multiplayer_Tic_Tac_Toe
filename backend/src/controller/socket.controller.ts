@@ -83,9 +83,22 @@ export default class SocketController {
     return clients || new Set<string>();
   }
 
-  async incrementScore(userId: string, score: number) {
+  async incrementScore(
+    userId: string,
+    score: number
+  ): Promise<User | undefined> {
     try {
-      await redis.incrBy(`user:${userId}:tic_tac_toe_high_score`, score);
+      const res = await redis.get(userId);
+      if (res) {
+        const user = JSON.parse(res);
+        user.tic_tac_toe_high_score += score;
+        await redis.set(userId, JSON.stringify(user));
+        return {
+          ...user,
+          tic_tac_toe_high_score: user.tic_tac_toe_high_score + score,
+        };
+      }
+      return undefined;
     } catch (error) {
       throw new ApiError({
         status: 400,
@@ -204,6 +217,9 @@ export default class SocketController {
 
       // Handle Player Win or Lose
       this.handlePlayerWin(socket);
+
+      // Handle High Score
+      this.increaseScore(socket);
 
       // Handle Player Draw
       this.handleGameDraw(socket);
@@ -438,18 +454,13 @@ export default class SocketController {
   }
 
   private handlePlayAgain(socket: Socket) {
-    this.on(socket, "playAgain", async ({ roomName }: Room) => {
-      const numberOfClients = this.getNumberOfClient(roomName);
-
-      if (numberOfClients.size <= 1) {
-        this.EmitPlayerLeft(socket, roomName);
-      }
+    this.on(socket, "play_again", async ({ roomId }: { roomId: string }) => {
+      this.emitToRoom(roomId, "play_again", {});
     });
   }
 
   private handlePlayerWin(socket: Socket) {
     this.on(socket, "player_win", ({ userId, playerName }) => {
-      console.log({ userId, playerName });
       const socketToUserId = Array.from(this.customIdToSocketId);
 
       const winnerSocketId = socketToUserId.find(
@@ -474,6 +485,18 @@ export default class SocketController {
         winner: playerName,
       });
     });
+  }
+
+  private increaseScore(socket: Socket) {
+    this.on(
+      socket,
+      "increase_high_score",
+      async ({ userId, score }: { userId: string; score: number }) => {
+        const increasedValue = await this.incrementScore(userId, score);
+        console.log({ increasedValue });
+        socket.emit("high_score_increased", increasedValue);
+      }
+    );
   }
 
   private handleGameDraw(socket: Socket) {
