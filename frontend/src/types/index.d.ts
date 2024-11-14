@@ -14,10 +14,10 @@ export declare type Room = {
 };
 
 export declare type WinStatusType = {
-  isDraw?: boolean;
-  isWin?: boolean;
-  playerId?: string;
-  [key: string]: string;
+  isDraw: boolean;
+  isWin: boolean;
+  isLose: boolean;
+  playerName: string;
 };
 
 export const enum ROOM_TYPE {
@@ -48,4 +48,9 @@ export declare type ToggleTurn = {
 
 export declare type GameComplete = {
   roomId: string;
+};
+
+export declare type PlayerWinMessage = {
+  title: string;
+  description: string;
 };

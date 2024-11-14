@@ -7,7 +7,6 @@ import { useNavigate } from "react-router-dom";
 
 interface RoomContextType {
   user: User | undefined;
-  roomName: string;
   roomId: string;
 }
 
@@ -18,14 +17,12 @@ interface RoomProviderProps {
 export const RoomContext = createContext<RoomContextType>({
   user: undefined,
   roomId: "",
-  roomName: "",
 });
 
 export const useRoomContext = () => useContext(RoomContext);
 
 const RoomProvider: React.FC<RoomProviderProps> = ({ children }) => {
   const [roomId, setRoomId] = useState<string>("");
-  const [roomName, setRoomName] = useState<string>("");
   const [user, setUser] = useState<User | undefined>();
   const { toast } = useToast();
   const dbRef = useRef<IDBDatabase | null>(null);
@@ -39,7 +36,6 @@ const RoomProvider: React.FC<RoomProviderProps> = ({ children }) => {
 
         if (findRoom?.data) {
           setRoomId(findRoom?.data?.roomId ?? "");
-          setRoomName(findRoom?.data?.roomName ?? "");
         } else {
           navigate("/home");
         }
@@ -58,7 +54,7 @@ const RoomProvider: React.FC<RoomProviderProps> = ({ children }) => {
         }
       };
     })();
-  }, [navigate, setRoomId, setRoomName, toast]);
+  }, [navigate, setRoomId, toast]);
 
   useEffect(() => {
     const request = indexedDB.open(DB_NAME, 3);
@@ -85,7 +81,7 @@ const RoomProvider: React.FC<RoomProviderProps> = ({ children }) => {
   }, [toast]);
 
   return (
-    <RoomContext.Provider value={{ roomId, roomName, user }}>
+    <RoomContext.Provider value={{ roomId, user }}>
       {children}
     </RoomContext.Provider>
   );

@@ -11,16 +11,16 @@ function OnlineTic() {
   const [gameData, setGameData] = useState<GameData | null>(null);
 
   const counter = useRef(0);
-  const [openDialog, setOpenDialog] = useState(false);
   const [winStatus, setWinStatus] = useState<WinStatusType>({
     isWin: false,
     isDraw: false,
-    playerId: "",
-  } as WinStatusType);
+    isLose: false,
+    playerName: "",
+  });
   const [leftDialog, setLeftDialog] = useState<boolean>(false);
   const navigate = useNavigate();
   const { socket } = useSocket();
-  const { roomId, roomName, user } = useRoomContext();
+  const { roomId, user } = useRoomContext();
 
   const resetGame = () => {
     const boxes = document.querySelectorAll(".tic_tac_box");
@@ -60,17 +60,18 @@ function OnlineTic() {
     });
 
     if (isWin) {
-      socket.emit("player_win", {
-        roomId,
-        userId: user?.userId,
-        playerName: user?.userName,
-      });
+      if (gameData?.turn === user?.userId) {
+        socket.emit("player_win", {
+          userId: user?.userId,
+          playerName: user?.userName,
+        });
+      }
     }
 
     if (counter.current === 9) {
       socket.emit("game_draw", { roomId });
     }
-  }, [roomId, socket, user?.userId, user?.userName]);
+  }, [gameData?.turn, user?.userId, user?.userName, socket, roomId]);
 
   const AddDivElement = useCallback(() => {
     const currentTurnValue: "X" | "O" | null =
@@ -147,27 +148,29 @@ function OnlineTic() {
       setGameData(data);
     };
 
-    const handleGameWin = () => {
-      console.log("Game Win");
+    const handleGameWin = ({ winner }: { winner: string }) => {
       setWinStatus({
         isWin: true,
-        playerName: "Abdur Rab Khan",
+        isDraw: false,
+        isLose: false,
+        playerName: winner,
       });
     };
 
-    const handleGameLose = () => {
-      console.log("Game Lose");
+    const handleGameLose = ({ winner }: { winner: string }) => {
       setWinStatus({
+        isLose: true,
         isWin: false,
-        playerName: "Abdur Rab Khan",
+        isDraw: false,
+        playerName: winner,
       });
     };
 
     const handleGameDraw = () => {
-      console.log("Game Draw");
       setWinStatus({
         isDraw: true,
-        isWin: undefined,
+        isWin: false,
+        isLose: false,
         playerName: "",
       });
     };
@@ -190,7 +193,10 @@ function OnlineTic() {
             turn: turn,
           }) as GameData,
       );
-      checkIsWin();
+
+      if (counter.current >= 5) {
+        checkIsWin();
+      }
     };
 
     const handlePlayerLeft = () => {
@@ -221,12 +227,7 @@ function OnlineTic() {
   return (
     <>
       <GameBoard
-        counter={counter}
-        openDialog={openDialog}
-        resetGame={resetGame}
-        winStatus={winStatus as WinStatusType}
         uiTurn={gameData ? gameData[gameData.turn] : "X"}
-        setOpenDialog={setOpenDialog}
         handleExitBtn={handleExitBtn}
       />
       <PlayerLeft
@@ -237,7 +238,7 @@ function OnlineTic() {
       />
       <PlayerWin
         roomId={roomId}
-        open={winStatus as WinStatusType}
+        open={winStatus}
         setOpenDialog={
           setWinStatus as React.Dispatch<React.SetStateAction<WinStatusType>>
         }

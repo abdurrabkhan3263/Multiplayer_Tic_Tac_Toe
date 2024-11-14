@@ -28,14 +28,10 @@ export default class SocketController {
 
   async connection(callback: (socket: Socket) => void) {
     this.io.on("connection", (socket: Socket) => {
-      console.log("a user connected", socket.id);
-
       callback(socket);
 
       socket.on("disconnecting", () => {
         const rooms = Array.from(socket.rooms);
-
-        console.log("user disconnecting:", socket.id, { rooms });
 
         rooms.forEach(async (room) => {
           if (room !== socket.id) {
@@ -51,8 +47,6 @@ export default class SocketController {
         if (mappedSocket) {
           const rooms = Array.from(socket.rooms);
           this.customIdToSocketId.delete(socket.id);
-
-          console.log("user disconnecting:", socket.id, { rooms });
 
           rooms.forEach(async (room) => {
             if (room !== socket.id) {
@@ -150,7 +144,6 @@ export default class SocketController {
         return;
       }
     } catch (error) {
-      console.error("Something went wrong", error);
       this.emitGameError({
         socket,
         message: "Failed to update room",
@@ -213,7 +206,7 @@ export default class SocketController {
       this.handlePlayerWin(socket);
 
       // Handle Player Draw
-      this.handlePlayerDraw(socket);
+      this.handleGameDraw(socket);
 
       // Handle Player Left
       this.handlePlayerLeft(socket);
@@ -301,7 +294,6 @@ export default class SocketController {
             this.emitGameStart(socket, roomId);
           }
         } catch (error) {
-          console.error("Something went wrong", error);
           this.emitGameError({
             socket,
             message: "Failed to join room",
@@ -456,14 +448,15 @@ export default class SocketController {
   }
 
   private handlePlayerWin(socket: Socket) {
-    this.on(socket, "player_win", ({ roomId, userId, playerName }) => {
+    this.on(socket, "player_win", ({ userId, playerName }) => {
+      console.log({ userId, playerName });
       const socketToUserId = Array.from(this.customIdToSocketId);
 
       const winnerSocketId = socketToUserId.find(
-        ([socketId, id]) => id === userId
+        ([_, id]) => id === userId
       )?.[0];
       const loserSocketId = socketToUserId.find(
-        ([socketId, id]) => id !== userId
+        ([_, id]) => id !== userId
       )?.[0];
 
       if (!winnerSocketId || !loserSocketId) {
@@ -474,16 +467,18 @@ export default class SocketController {
         return;
       }
 
-      console.log({ winnerSocketId, loserSocketId });
-
-      this.io.to(winnerSocketId as string).emit("game_win");
-      this.io.to(loserSocketId as string).emit("game_lose");
+      this.io.to(winnerSocketId).emit("game_win", {
+        winner: playerName,
+      });
+      this.io.to(loserSocketId).emit("game_lose", {
+        winner: playerName,
+      });
     });
   }
 
-  private handlePlayerDraw(socket: Socket) {
-    this.on(socket, "player_draw", ({ roomId }) => {
-      this.emitGameDraw(socket, roomId);
+  private handleGameDraw(socket: Socket) {
+    this.on(socket, "game_draw", ({ roomId }) => {
+      this.emitToRoom(roomId, "game_draw", {});
     });
   }
 
@@ -530,27 +525,6 @@ export default class SocketController {
     this.emitToRoom(roomName, "match_found", {
       roomName,
       message: "game has started",
-    });
-  }
-
-  private emitGameEnd(socket: Socket, roomName: string) {
-    this.emitToRoom(roomName, "game_end", {
-      roomName,
-      message: "game has ended",
-    });
-  }
-
-  private emitGameDraw(socket: Socket, roomName: string) {
-    this.emitToRoom(roomName, "game_draw", {
-      roomName,
-      message: "game has draw",
-    });
-  }
-
-  private emitGameWin(socket: Socket, roomName: string) {
-    this.emitToRoom(roomName, "game_win", {
-      roomName,
-      message: "game has won",
     });
   }
 }
