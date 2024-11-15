@@ -8,16 +8,14 @@ import { useNavigate } from "react-router-dom";
 import UserNameSection from "@/components/UserNameSection";
 import { useSocket } from "@/context/SocketProvider";
 import Score from "@/components/Score";
-import { v4 as uuidv4 } from "uuid";
 import { addUser, updateUser } from "@/lib/action/user.action";
-import { User } from "@/types";
 
 function Home() {
   const { toast } = useToast();
   const [IsAddingUser, setIsAddingUser] = useState(false);
   const [nameDialogOpen, setNameDialogOpen] = useState(false);
   const navigate = useNavigate();
-  const { user, setUser, dbRef } = useSocket();
+  const { user, setUser } = useSocket();
 
   const handlePlayWithFriends = () => {
     if (!user?.userName) {
@@ -46,7 +44,8 @@ function Home() {
 
       if (user) {
         const updatedUser = { ...user, userName };
-        await updateUser(updatedUser as User);
+        await updateUser(updatedUser);
+
         setUser(updatedUser);
       } else {
         const newUser = await addUser({ userName });
@@ -85,7 +84,7 @@ function Home() {
                 <Edit size={24} />
               </Button>
             </UserNameSection>
-            <Score tic_tac_toe_score={Number(user?.tic_tac_toe_high_score)} />
+            <Score />
           </div>
           <Button variant={"gameBtn"}>
             <Volume2 size={24} />

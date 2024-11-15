@@ -17,7 +17,7 @@ export declare type WinStatusType = {
   isDraw: boolean;
   isWin: boolean;
   isLose: boolean;
-  playerName: string;
+  playerName?: string;
 };
 
 export const enum ROOM_TYPE {

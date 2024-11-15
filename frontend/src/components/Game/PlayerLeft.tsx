@@ -7,7 +7,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useNavigate } from "react-router-dom";
-import { Home, Repeat } from "lucide-react";
+import { Home } from "lucide-react";
 import { Button } from "../ui/button";
 import { useSocket } from "@/context/SocketProvider";
 
@@ -52,13 +52,10 @@ function PlayerLeft({
             The other player has left the game.
           </DialogDescription>
         </DialogHeader>
-        <div className="flex justify-between">
+        <div className="flex justify-end">
           <Button variant={"gameBtn"} onClick={handleGoToHome}>
             Go Home <Home />
           </Button>
-          {/* <Button variant={"gameBtn"} onClick={handlePlayAgain}>
-            Play Again <Repeat />
-          </Button> */}
         </div>
       </DialogContent>
     </Dialog>

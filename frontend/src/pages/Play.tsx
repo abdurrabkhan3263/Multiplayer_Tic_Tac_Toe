@@ -5,14 +5,10 @@ import RoomProvider from "@/context/RoomContext";
 function Play() {
   const roomId = window.location.pathname.split("/").pop();
 
-  console.log("roomId", roomId && roomId.startsWith("room"));
-
-  return roomId && roomId.startsWith("room") ? (
+  return (
     <RoomProvider>
-      <OnlineTic />
+      {roomId && roomId.startsWith("room") ? <OnlineTic /> : <OfflineTic />}
     </RoomProvider>
-  ) : (
-    <OfflineTic />
   );
 }
 

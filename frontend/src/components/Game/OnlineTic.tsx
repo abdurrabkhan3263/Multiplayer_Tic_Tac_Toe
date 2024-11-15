@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import PlayerLeft from "./PlayerLeft";
 import PlayerWin from "./PlayerWin";
 import { GameData, ToggleTurn, WinStatusType } from "@/types";
-import { DB_NAME, SCORE_INC } from "@/lib/constants";
+import { increaseHighScore as increaseHighScoreInDB } from "@/lib/action/user.action";
 
 function OnlineTic() {
   const [gameData, setGameData] = useState<GameData | null>(null);
@@ -21,7 +21,7 @@ function OnlineTic() {
   const [leftDialog, setLeftDialog] = useState<boolean>(false);
   const navigate = useNavigate();
   const { socket } = useSocket();
-  const { roomId, user } = useRoomContext();
+  const { roomId, user, setUser } = useRoomContext();
 
   const resetGame = () => {
     const boxes = document.querySelectorAll(".tic_tac_box");
@@ -121,52 +121,15 @@ function OnlineTic() {
     socket.emit("play_again", { roomId });
   };
 
-  const increaseHighScore = async () => {
+  const increaseHighScore = useCallback(async () => {
     if (!user) return;
-
-    socket.emit("increase_high_score", {
-      userId: user.userId,
-      incBy: SCORE_INC,
-    });
-
-    const request = indexedDB.open(DB_NAME, 3);
-
-    request.onsuccess = async () => {
-      const db = request.result;
-      const transaction = db.transaction("currentUser", "readwrite");
-      const userStore = transaction.objectStore("currentUser");
-
-      userStore.openCursor().onsuccess = (event) => {
-        console.log("Cursor Event:: ", event);
-
-        const cursor = (event.target as IDBRequest).result;
-        if (cursor) {
-          const updatedUser = {
-            ...cursor.value,
-            tic_tac_toe_high_score:
-              cursor.value.tic_tac_toe_high_score + SCORE_INC,
-          };
-          cursor.update(updatedUser);
-          socket.emit("increase_high_score", {
-            userId: user.userId,
-            incBy: SCORE_INC,
-          });
-        }
-      };
-
-      transaction.oncomplete = () => {
-        console.log("High Score Updated");
-      };
-
-      transaction.onerror = (error) => {
-        console.error("Error:: ", error);
-      };
-    };
-
-    request.onerror = (error) => {
-      console.error("Error:: ", error);
-    };
-  };
+    try {
+      const increaseHighScore = await increaseHighScoreInDB();
+      setUser(increaseHighScore);
+    } catch (error) {
+      console.error("Error increasing high score", error);
+    }
+  }, [setUser, user]);
 
   // Event Listeners for boxes
 
@@ -287,14 +250,21 @@ function OnlineTic() {
       socket.off("player_left", handlePlayerLeft);
       socket.off("play_again", handlePlayAgain);
     };
-  }, [AddDivElement, checkIsWin, gameData, roomId, socket, user]);
+  }, [
+    AddDivElement,
+    checkIsWin,
+    gameData,
+    increaseHighScore,
+    roomId,
+    socket,
+    user,
+  ]);
 
   return (
     <>
       <GameBoard
         uiTurn={gameData ? gameData[gameData.turn] : "X"}
         handleExitBtn={handleExitBtn}
-        tic_tac_toe_score={Number(user?.tic_tac_toe_high_score)}
       />
       <PlayerLeft
         roomId={roomId}

@@ -196,9 +196,6 @@ export default class SocketController {
       // Handle Player Win or Lose
       this.handlePlayerWin(socket);
 
-      // Handle High Score
-      this.increaseScore(socket);
-
       // Handle Player Draw
       this.handleGameDraw(socket);
 

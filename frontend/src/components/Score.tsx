@@ -1,27 +1,16 @@
+import { useRoomContext } from "@/context/RoomContext";
 import { useSocket } from "@/context/SocketProvider";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
-function Score({ tic_tac_toe_score }: { tic_tac_toe_score: number }) {
-  const [score, setScore] = useState<number>(0);
+function Score() {
   const { user } = useSocket();
+  const { user: roomUser } = useRoomContext();
 
   useEffect(() => {
-    if (tic_tac_toe_score <= 0) return;
+    console.log({ user, roomUser });
+  }, [user, roomUser]);
 
-    const interval = setInterval(() => {
-      setScore((prev) => {
-        if (prev < tic_tac_toe_score) {
-          return prev + 1;
-        }
-        clearInterval(interval);
-        return prev;
-      });
-    }, 100);
-  }, [tic_tac_toe_score]);
-
-  useEffect(() => {
-    console.log({ user });
-  }, [user]);
+  if (!user && !roomUser) return <></>;
 
   return (
     <div className="flex items-center gap-3">
@@ -30,7 +19,7 @@ function Score({ tic_tac_toe_score }: { tic_tac_toe_score: number }) {
           "select-none text-3xl font-bold tabular-nums text-blue-500 transition-all duration-300 hover:text-blue-700"
         }
       >
-        {score}
+        {user?.tic_tac_toe_high_score || roomUser?.tic_tac_toe_high_score}
       </p>
       <div className="h-10 w-10">
         <img src="/score.svg" alt="" className="h-full w-full object-cover" />

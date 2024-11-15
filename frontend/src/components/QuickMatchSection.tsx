@@ -54,7 +54,7 @@ function QuickMatchSection({ user }: QuickMatchProps) {
         variant: "destructive",
       });
     });
-  }, []);
+  }, [navigate, socket, toast]);
 
   return (
     <TabsContent value="quick_match" className="mt-5">

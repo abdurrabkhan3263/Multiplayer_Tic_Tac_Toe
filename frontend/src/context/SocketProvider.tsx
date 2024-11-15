@@ -36,92 +36,22 @@ const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    const request = indexedDB.open(DB_NAME, 3);
-    request.onupgradeneeded = (event) => {
-      const db = (event.target as IDBOpenDBRequest).result;
-      if (!db.objectStoreNames.contains("currentUser")) {
-        const currentUserS = db.createObjectStore("currentUser", {
-          keyPath: "userId",
-        });
-        currentUserS.createIndex("userName", "userName", { unique: true });
-        currentUserS.createIndex(
-          "tic_tac_toe_high_score",
-          "tic_tac_toe_high_score",
-          { unique: false },
-        );
-      }
-    };
-
-    request.onsuccess = async () => {
-      dbRef.current = request.result;
-      const transaction = dbRef.current.transaction("currentUser", "readonly");
-      const store = transaction.objectStore("currentUser");
-
-      dbRef.current.onversionchange = () => {
-        dbRef.current?.close();
+    (async () => {
+      try {
+        const user = await getUser();
+        setUser(user);
+      } catch (error) {
         toast({
-          title: "Database is outdated",
-          description: "Please refresh the page",
+          title: "Error",
+          description:
+            error instanceof Error ? error?.message : "Something went wrong",
           variant: "destructive",
         });
-      };
-
-      store.getAll().onsuccess = async (event) => {
-        const users = (event.target as IDBRequest).result as User[];
-        console.log(users);
-        setUser(users[0]);
-
-        if (users.length > 0) {
-          try {
-            await getUser({ userId: users[0].userId });
-          } catch (error) {
-            const AxiosError = error as AxiosError;
-            if (AxiosError.status === 404) {
-              const newUser = await insertNewUser({
-                userName: users[0].userName,
-                userId: users[0].userId,
-              });
-
-              if (newUser && dbRef.current) {
-                const transaction = dbRef.current.transaction(
-                  "currentUser",
-                  "readwrite",
-                );
-                const store = transaction.objectStore("currentUser");
-                const cursorRequest = store.openCursor();
-
-                cursorRequest.onsuccess = (event) => {
-                  const cursor = (event.target as IDBRequest).result;
-
-                  if (cursor) {
-                    const updatedValue = {
-                      ...cursor.value,
-                      ...newUser,
-                      userId: cursor.value.userId,
-                    };
-                    const updateRequest = cursor.update(updatedValue);
-
-                    updateRequest.onsuccess = () => {
-                      setUser(newUser);
-                    };
-
-                    updateRequest.onerror = () => {
-                      console.error("Error updating user in IndexedDB");
-                    };
-
-                    cursor.continue();
-                  }
-                };
-              }
-            }
-          }
-        }
-      };
-    };
+      }
+    })();
   }, [toast]);
 
   useEffect(() => {
-    console.log("User changed");
     if (user?.userId) {
       socket.connect();
     }

@@ -1,6 +1,6 @@
 import { useToast } from "@/hooks/use-toast";
 import { getRoomById } from "@/lib/action/room.action";
-import { DB_NAME } from "@/lib/constants";
+import { getUser } from "@/lib/action/user.action";
 import { User } from "@/types";
 import { createContext, useState, useContext, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 interface RoomContextType {
   user: User | undefined;
   roomId: string;
+  setUser: React.Dispatch<React.SetStateAction<User | undefined>>;
 }
 
 interface RoomProviderProps {
@@ -17,6 +18,7 @@ interface RoomProviderProps {
 export const RoomContext = createContext<RoomContextType>({
   user: undefined,
   roomId: "",
+  setUser: () => {},
 });
 
 export const useRoomContext = () => useContext(RoomContext);
@@ -31,6 +33,8 @@ const RoomProvider: React.FC<RoomProviderProps> = ({ children }) => {
   useEffect(() => {
     (async () => {
       const roomId = window.location.pathname.split("/").pop();
+      if (!roomId?.startsWith("room:")) return;
+
       try {
         const findRoom = await getRoomById({ roomId: roomId ?? "" });
 
@@ -57,31 +61,25 @@ const RoomProvider: React.FC<RoomProviderProps> = ({ children }) => {
   }, [navigate, setRoomId, toast]);
 
   useEffect(() => {
-    const request = indexedDB.open(DB_NAME, 3);
-
-    request.onsuccess = async () => {
-      dbRef.current = request.result;
-      const transaction = dbRef.current.transaction("currentUser", "readonly");
-      const store = transaction.objectStore("currentUser");
-
-      dbRef.current.onversionchange = () => {
-        dbRef.current?.close();
+    (async () => {
+      try {
+        const user = await getUser();
+        if (user) {
+          setUser(user);
+        }
+      } catch (error) {
         toast({
-          title: "Database is outdated",
-          description: "Please refresh the page",
+          title: "Error",
+          description:
+            error instanceof Error ? error?.message : "Something went wrong",
           variant: "destructive",
         });
-      };
-
-      store.getAll().onsuccess = async (event) => {
-        const users = (event.target as IDBRequest).result as User[];
-        setUser(users[0]);
-      };
-    };
+      }
+    })();
   }, [toast]);
 
   return (
-    <RoomContext.Provider value={{ roomId, user }}>
+    <RoomContext.Provider value={{ roomId, user, setUser }}>
       {children}
     </RoomContext.Provider>
   );

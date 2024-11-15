@@ -8,14 +8,9 @@ import Score from "../Score";
 interface GameBoardProps {
   uiTurn: string;
   handleExitBtn: () => void;
-  tic_tac_toe_score: number;
 }
 
-function GameBoard({
-  uiTurn,
-  handleExitBtn,
-  tic_tac_toe_score,
-}: GameBoardProps) {
+function GameBoard({ uiTurn, handleExitBtn }: GameBoardProps) {
   return (
     <main className="home_page">
       <div className="home_menu">
@@ -29,7 +24,7 @@ function GameBoard({
                       <LogOut size={24} />
                     </Button>
                   </ExitGame>
-                  <Score tic_tac_toe_score={tic_tac_toe_score} />
+                  <Score />
                 </div>
                 <Button variant={"coolBtn"}>
                   <Volume2 size={24} />
