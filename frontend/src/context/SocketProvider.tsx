@@ -8,7 +8,6 @@ import React, {
 } from "react";
 import { socket } from "@/lib/socket.ts";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
 import { User } from "@/types";
 import { addUser, getUser } from "@/lib/action/user.action";
 import { DB_NAME } from "@/lib/constants";
@@ -33,29 +32,8 @@ const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const { toast } = useToast();
-  const navigate = useNavigate();
   const dbRef = useRef<IDBDatabase | null>(null);
   const [user, setUser] = useState<User | null>(null);
-
-  const insertNewUser = useCallback(
-    async ({ userName, userId }: { userName: string; userId?: string }) => {
-      try {
-        const res = await addUser({ userName, userId });
-
-        if (res?.data) {
-          return res.data;
-        }
-      } catch (error) {
-        toast({
-          title: "Error",
-          description:
-            error instanceof Error ? error?.message : "Something went wrong",
-          variant: "destructive",
-        });
-      }
-    },
-    [toast],
-  );
 
   useEffect(() => {
     const request = indexedDB.open(DB_NAME, 3);
@@ -140,9 +118,10 @@ const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
         }
       };
     };
-  }, [insertNewUser, toast]);
+  }, [toast]);
 
   useEffect(() => {
+    console.log("User changed");
     if (user?.userId) {
       socket.connect();
     }
@@ -163,7 +142,7 @@ const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
         variant: "destructive",
       });
     });
-  }, [navigate, toast, user]);
+  }, [toast, user]);
 
   return (
     <SocketContext.Provider value={{ socket, user, setUser, dbRef }}>

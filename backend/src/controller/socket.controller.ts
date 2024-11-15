@@ -83,30 +83,6 @@ export default class SocketController {
     return clients || new Set<string>();
   }
 
-  async incrementScore(
-    userId: string,
-    score: number
-  ): Promise<User | undefined> {
-    try {
-      const res = await redis.get(userId);
-      if (res) {
-        const user = JSON.parse(res);
-        user.tic_tac_toe_high_score += score;
-        await redis.set(userId, JSON.stringify(user));
-        return {
-          ...user,
-          tic_tac_toe_high_score: user.tic_tac_toe_high_score + score,
-        };
-      }
-      return undefined;
-    } catch (error) {
-      throw new ApiError({
-        status: 400,
-        message: "Failed to increment score",
-      });
-    }
-  }
-
   findAvailableRoom(): AvailableListRooms[] {
     const availableRooms: AvailableListRooms[] = [];
     const rooms = this.io.adapter.rooms;
@@ -133,6 +109,8 @@ export default class SocketController {
     findThatRoom: RoomResponse,
     roomId: string
   ) {
+    if (!findThatRoom) return;
+
     findThatRoom.clientCount += 1;
     const roomName = findThatRoom.roomName;
 
@@ -485,18 +463,6 @@ export default class SocketController {
         winner: playerName,
       });
     });
-  }
-
-  private increaseScore(socket: Socket) {
-    this.on(
-      socket,
-      "increase_high_score",
-      async ({ userId, score }: { userId: string; score: number }) => {
-        const increasedValue = await this.incrementScore(userId, score);
-        console.log({ increasedValue });
-        socket.emit("high_score_increased", increasedValue);
-      }
-    );
   }
 
   private handleGameDraw(socket: Socket) {

@@ -3,13 +3,19 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { LogOut, Volume2 } from "lucide-react";
+import Score from "../Score";
 
 interface GameBoardProps {
   uiTurn: string;
   handleExitBtn: () => void;
+  tic_tac_toe_score: number;
 }
 
-function GameBoard({ uiTurn, handleExitBtn }: GameBoardProps) {
+function GameBoard({
+  uiTurn,
+  handleExitBtn,
+  tic_tac_toe_score,
+}: GameBoardProps) {
   return (
     <main className="home_page">
       <div className="home_menu">
@@ -23,9 +29,7 @@ function GameBoard({ uiTurn, handleExitBtn }: GameBoardProps) {
                       <LogOut size={24} />
                     </Button>
                   </ExitGame>
-                  <div>
-                    Score:: <span>0</span>
-                  </div>
+                  <Score tic_tac_toe_score={tic_tac_toe_score} />
                 </div>
                 <Button variant={"coolBtn"}>
                   <Volume2 size={24} />

@@ -7,7 +7,6 @@ import PlayerLeft from "./PlayerLeft";
 import PlayerWin from "./PlayerWin";
 import { GameData, ToggleTurn, WinStatusType } from "@/types";
 import { DB_NAME, SCORE_INC } from "@/lib/constants";
-import { toast } from "@/hooks/use-toast";
 
 function OnlineTic() {
   const [gameData, setGameData] = useState<GameData | null>(null);
@@ -125,10 +124,9 @@ function OnlineTic() {
   const increaseHighScore = async () => {
     if (!user) return;
 
-    const highScore = user?.tic_tac_toe_high_score;
     socket.emit("increase_high_score", {
       userId: user.userId,
-      highScore: highScore,
+      incBy: SCORE_INC,
     });
 
     const request = indexedDB.open(DB_NAME, 3);
@@ -143,15 +141,15 @@ function OnlineTic() {
 
         const cursor = (event.target as IDBRequest).result;
         if (cursor) {
-          console.log("User Store:: ", cursor.value);
           const updatedUser = {
             ...cursor.value,
-            tic_tac_toe_high_score: highScore + 1,
+            tic_tac_toe_high_score:
+              cursor.value.tic_tac_toe_high_score + SCORE_INC,
           };
           cursor.update(updatedUser);
           socket.emit("increase_high_score", {
             userId: user.userId,
-            score: SCORE_INC,
+            incBy: SCORE_INC,
           });
         }
       };
@@ -296,6 +294,7 @@ function OnlineTic() {
       <GameBoard
         uiTurn={gameData ? gameData[gameData.turn] : "X"}
         handleExitBtn={handleExitBtn}
+        tic_tac_toe_score={Number(user?.tic_tac_toe_high_score)}
       />
       <PlayerLeft
         roomId={roomId}

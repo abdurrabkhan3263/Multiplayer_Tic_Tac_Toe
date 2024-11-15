@@ -4,10 +4,13 @@ import { Edit, Users, Volume2 } from "lucide-react";
 import { BsLaptop } from "react-icons/bs";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
-import { addUser, updateUser } from "@/lib/action/user.action";
 import { useNavigate } from "react-router-dom";
 import UserNameSection from "@/components/UserNameSection";
 import { useSocket } from "@/context/SocketProvider";
+import Score from "@/components/Score";
+import { v4 as uuidv4 } from "uuid";
+import { addUser, updateUser } from "@/lib/action/user.action";
+import { User } from "@/types";
 
 function Home() {
   const { toast } = useToast();
@@ -17,52 +20,10 @@ function Home() {
   const { user, setUser, dbRef } = useSocket();
 
   const handlePlayWithFriends = () => {
-    if (!currentUser) {
+    if (!user?.userName) {
       setNameDialogOpen(true);
     } else {
       navigate("/home/play");
-    }
-  };
-
-  const insertNewUser = async ({
-    userName,
-    userId,
-  }: {
-    userName: string;
-    userId?: string;
-  }) => {
-    try {
-      const res = await addUser({ userName, userId });
-
-      if (res?.data) {
-        return res.data;
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description:
-          error instanceof Error ? error?.message : "Something went wrong",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const updateUserName = async ({
-    userId,
-    userName,
-  }: {
-    userId: string;
-    userName: string;
-  }) => {
-    try {
-      await updateUser({ userId, userName });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description:
-          error instanceof Error ? error?.message : "Something went wrong",
-        variant: "destructive",
-      });
     }
   };
 
@@ -84,53 +45,14 @@ function Home() {
       }
 
       if (user) {
-        await updateUserName({ userId: user.userId, userName });
-        if (
-          dbRef.current &&
-          dbRef.current.objectStoreNames.contains("currentUser")
-        ) {
-          const transaction = dbRef.current.transaction(
-            "currentUser",
-            "readwrite",
-          );
-          const store = transaction.objectStore("currentUser");
-
-          store.put({ ...user, userName });
-
-          transaction.oncomplete = () => {
-            setUser({ ...user, userName });
-          };
-
-          transaction.onerror = () => {
-            toast({
-              title: "Error",
-              description: "Error updating user in IndexedDB",
-              variant: "destructive",
-            });
-          };
-        }
+        const updatedUser = { ...user, userName };
+        await updateUser(updatedUser as User);
+        setUser(updatedUser);
       } else {
-        const newUser = await insertNewUser({ userName });
+        const newUser = await addUser({ userName });
 
-        if (
-          dbRef.current &&
-          dbRef.current.objectStoreNames.contains("currentUser")
-        ) {
-          const transaction = dbRef.current.transaction(
-            "currentUser",
-            "readwrite",
-          );
-          const store = transaction.objectStore("currentUser");
-
-          store.add(newUser);
-
-          transaction.oncomplete = () => {
-            setUser(newUser);
-          };
-
-          transaction.onerror = () => {
-            console.error("Error adding user to IndexedDB");
-          };
+        if (newUser) {
+          setUser(newUser);
         }
       }
     } catch (error) {
@@ -151,17 +73,20 @@ function Home() {
     <div className="home_menu">
       <div className={"home_menu_card_bg home_menu_card"}>
         <div className="flex w-full justify-between">
-          <UserNameSection
-            handleAddUser={handleAddUser}
-            IsAddingUser={IsAddingUser}
-            user={user}
-            nameDialogOpen={nameDialogOpen}
-            setNameDialogOpen={setNameDialogOpen}
-          >
-            <Button variant={"gameBtn"}>
-              <Edit size={24} />
-            </Button>
-          </UserNameSection>
+          <div className="flex items-center gap-6">
+            <UserNameSection
+              handleAddUser={handleAddUser}
+              IsAddingUser={IsAddingUser}
+              user={user}
+              nameDialogOpen={nameDialogOpen}
+              setNameDialogOpen={setNameDialogOpen}
+            >
+              <Button variant={"gameBtn"}>
+                <Edit size={24} />
+              </Button>
+            </UserNameSection>
+            <Score tic_tac_toe_score={Number(user?.tic_tac_toe_high_score)} />
+          </div>
           <Button variant={"gameBtn"}>
             <Volume2 size={24} />
           </Button>

@@ -123,17 +123,7 @@ function OfflineTic() {
     navigate("/home");
   };
 
-  return (
-    <GameBoard
-      counter={counter}
-      openDialog={openDialog}
-      resetGame={resetGame}
-      winStatus={winStatus}
-      uiTurn={uiTurn}
-      setOpenDialog={setOpenDialog}
-      handleExitBtn={handleExit}
-    />
-  );
+  return <GameBoard uiTurn={uiTurn} handleExitBtn={handleExit} />;
 }
 
 export default OfflineTic;
