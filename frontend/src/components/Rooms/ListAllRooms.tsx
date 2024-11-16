@@ -31,7 +31,6 @@ function ListAllRooms({ user }: MyRoomProps) {
             : err instanceof AxiosError
               ? err.response?.data.message
               : "An error occurred";
-
         console.error(errorMessage);
       }
     })();

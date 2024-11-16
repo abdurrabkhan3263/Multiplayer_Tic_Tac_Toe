@@ -12,6 +12,7 @@ import UserNameSection from "../UserNameSection";
 import { User } from "@/types";
 import CustomRoom from "./CustomRoomSection";
 import QuickMatch from "../QuickMatchSection";
+import { useSocket } from "@/context/SocketProvider";
 
 interface JoinRoomProps {
   children?: React.ReactNode;
@@ -30,6 +31,22 @@ const JoinRoom: React.FC<JoinRoomProps> = ({
   nameDialogOpen,
   setNameDialogOpen,
 }) => {
+  const { socket } = useSocket();
+  const [roomIdForLeave, setRoomIdForLeave] = React.useState<string | null>(
+    null,
+  );
+  const [openDialog, setOpenDialog] = React.useState(false);
+
+  const handleOpenChange = () => {
+    if (roomIdForLeave) {
+      socket.emit("player_left", {
+        roomId: roomIdForLeave,
+      });
+      setRoomIdForLeave(null);
+    }
+    setOpenDialog((prev) => !prev);
+  };
+
   return (
     <>
       {!user ? (
@@ -43,7 +60,7 @@ const JoinRoom: React.FC<JoinRoomProps> = ({
           {children}
         </UserNameSection>
       ) : (
-        <Dialog>
+        <Dialog open={openDialog} onOpenChange={handleOpenChange}>
           <DialogTrigger asChild>{children}</DialogTrigger>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
@@ -57,7 +74,7 @@ const JoinRoom: React.FC<JoinRoomProps> = ({
                 <TabsTrigger value="quick_match">Quick Match</TabsTrigger>
                 <TabsTrigger value="custom_room">Custom Room</TabsTrigger>
               </TabsList>
-              <QuickMatch user={user} />
+              <QuickMatch user={user} setRoomIdForLeave={setRoomIdForLeave} />
               <CustomRoom user={user} />
             </Tabs>
           </DialogContent>

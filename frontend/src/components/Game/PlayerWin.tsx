@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -10,51 +10,85 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "../ui/button";
 import { House, Repeat2 } from "lucide-react";
 import { useSocket } from "@/context/SocketProvider";
-import { WinStatusType } from "@/types";
+import { PlayerWinMessage, WinStatusType } from "@/types";
 
 interface PlayerWinProps {
-  roomId: string;
+  roomId?: string;
   open: WinStatusType;
   setOpenDialog: React.Dispatch<React.SetStateAction<WinStatusType>>;
+  handlePlayAgain: () => void;
 }
 
-function PlayerWin({ roomId, open, setOpenDialog }: PlayerWinProps) {
+function PlayerWin({
+  roomId,
+  open,
+  setOpenDialog,
+  handlePlayAgain,
+}: PlayerWinProps) {
+  const [message, setMessage] = React.useState<PlayerWinMessage>();
   const { socket } = useSocket();
   const navigate = useNavigate();
 
   const handleGoToHome = () => {
     navigate("/home");
-    setOpenDialog({ isWin: undefined, isDraw: undefined, playerName: "" });
+    setOpenDialog({
+      isWin: false,
+      isDraw: false,
+      isLose: false,
+      playerName: "",
+    });
+
+    if (!roomId) return;
+
     socket.emit("player_left", { roomId });
   };
 
-  const handlePlayAgain = () => {
-    setOpenDialog({ isWin: undefined, isDraw: undefined, playerName: "" });
-  };
+  useEffect(() => {
+    if (open.isWin) {
+      setMessage({
+        title: "We have a Winner! 🎉",
+        description: open?.playerName
+          ? `Congratulations to Player ${open.playerName} for winning the game!`
+          : "Congratulations! You won the game!",
+      });
+    } else if (open.isDraw) {
+      setMessage({
+        title: "Game Over! 🎮",
+        description: "The game ended in a draw. Well played!",
+      });
+    } else if (open.isLose) {
+      setMessage({
+        title: "You Lose! 😢",
+        description: open?.playerName
+          ? `${open.playerName} won the game! Better luck next time.`
+          : "You lost the game! Better luck next time.",
+      });
+    } else {
+      setMessage({
+        title: "Game Over!",
+        description: "The game ended in a draw. Well played!",
+      });
+    }
+  }, [open, setOpenDialog]);
 
   return (
     <Dialog
-      open={open.isWin || open.isDraw}
+      open={open.isWin || open.isDraw || open.isLose}
       onOpenChange={() => {
-        if (open.isWin || open.isDraw) {
-          setOpenDialog({
-            isWin: open.isWin,
-            isDraw: open.isDraw,
-            playerName: "",
-          });
+        if (open.isWin || open.isDraw || open.isLose) {
+          setOpenDialog((prev) => ({
+            ...prev,
+            isWin: open?.isWin ?? false,
+            isDraw: open?.isDraw ?? false,
+            isLose: open?.isLose ?? false,
+          }));
         }
       }}
     >
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>
-            {open.isWin ? "We have a Winner! 🎉" : "Game Over!"}
-          </DialogTitle>
-          <DialogDescription>
-            {open.isWin
-              ? `Congratulations to Player ${open.player} for winning the game!`
-              : "The game ended in a draw. Well played!"}
-          </DialogDescription>
+          <DialogTitle>{message?.title}</DialogTitle>
+          <DialogDescription>{message?.description}</DialogDescription>
         </DialogHeader>
         <div className="flex justify-between">
           <Button variant={"gameBtn"} onClick={handlePlayAgain}>

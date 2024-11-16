@@ -12,6 +12,11 @@ export default {
       colors: {},
       backgroundColor: {
         bg: "var(--bg)",
+        yellow: "var(--yellow)",
+        "dark-yellow": "var(--dark-yellow)",
+      },
+      boxShadowColor: {
+        yellow: "var(--alpha-yellow)",
       },
       textColor: {
         lightText: "var(--text)",

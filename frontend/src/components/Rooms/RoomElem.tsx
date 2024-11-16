@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { io } from "socket.io-client";
 import { useNavigate } from "react-router-dom";
 import { GameError } from "@/types";
+import SearchingForAnotherPlayer from "./SearchingForAnotherPlayer";
 
 interface RoomElemProps {
   name: string;
@@ -15,6 +16,7 @@ interface RoomElemProps {
   participants: string;
   userId: string;
   roomId: string;
+  setRoomIdForLeave: React.Dispatch<React.SetStateAction<string | null>>;
 }
 
 function RoomElem({
@@ -30,7 +32,7 @@ function RoomElem({
   const { toast } = useToast();
   const socket = io("/game");
   const [searchingToAnotherUser, setSearchingToAnotherUser] =
-    React.useState(false);
+    React.useState<boolean>(true);
   const navigate = useNavigate();
   const [dialogOpen, setDialogOpen] = React.useState(false);
 
@@ -87,12 +89,12 @@ function RoomElem({
     });
   };
 
-  const handleMatchFound = (data: { roomName: string }) => {
+  const handleMatchFound = ({ roomId }: { roomId: string }) => {
     toast({
       title: "Match Found",
-      description: `You are matched with another player in ${data.roomName}`,
+      description: `You are matched with another player in ${roomId}`,
     });
-    navigate(`/home/play/${data.roomName}`);
+    navigate(`/home/play/${roomId}`);
   };
 
   useEffect(() => {
@@ -138,13 +140,10 @@ function RoomElem({
           btnText="Enter Room"
           header="Enter to the custom room"
         />
-        {searchingToAnotherUser && (
-          <div className="flex flex-col items-center justify-center space-y-4">
-            <p className="text-sm text-white">
-              Searching for another player...
-            </p>
-          </div>
-        )}
+        <SearchingForAnotherPlayer
+          dialogOpen={searchingToAnotherUser}
+          setDialogOpen={setSearchingToAnotherUser}
+        />
       </DialogContent>
     </Dialog>
   );

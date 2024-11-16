@@ -8,7 +8,6 @@ import React, {
 } from "react";
 import { socket } from "@/lib/socket.ts";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
 import { User } from "@/types";
 import { addUser, getUser } from "@/lib/action/user.action";
 import { DB_NAME } from "@/lib/constants";
@@ -33,18 +32,14 @@ const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const { toast } = useToast();
-  const navigate = useNavigate();
   const dbRef = useRef<IDBDatabase | null>(null);
   const [user, setUser] = useState<User | null>(null);
 
-  const insertNewUser = useCallback(
-    async ({ userName, userId }: { userName: string; userId?: string }) => {
+  useEffect(() => {
+    (async () => {
       try {
-        const res = await addUser({ userName, userId });
-
-        if (res?.data) {
-          return res.data;
-        }
+        const user = await getUser();
+        setUser(user);
       } catch (error) {
         toast({
           title: "Error",
@@ -53,93 +48,8 @@ const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
           variant: "destructive",
         });
       }
-    },
-    [toast],
-  );
-
-  useEffect(() => {
-    const request = indexedDB.open(DB_NAME, 3);
-    request.onupgradeneeded = (event) => {
-      const db = (event.target as IDBOpenDBRequest).result;
-      if (!db.objectStoreNames.contains("currentUser")) {
-        const currentUserS = db.createObjectStore("currentUser", {
-          keyPath: "userId",
-        });
-        currentUserS.createIndex("userName", "userName", { unique: true });
-        currentUserS.createIndex(
-          "tic_tac_toe_high_score",
-          "tic_tac_toe_high_score",
-          { unique: false },
-        );
-      }
-    };
-
-    request.onsuccess = async () => {
-      dbRef.current = request.result;
-      const transaction = dbRef.current.transaction("currentUser", "readonly");
-      const store = transaction.objectStore("currentUser");
-
-      dbRef.current.onversionchange = () => {
-        dbRef.current?.close();
-        toast({
-          title: "Database is outdated",
-          description: "Please refresh the page",
-          variant: "destructive",
-        });
-      };
-
-      store.getAll().onsuccess = async (event) => {
-        const users = (event.target as IDBRequest).result as User[];
-        setUser(users[0]);
-
-        if (users.length > 0) {
-          try {
-            await getUser({ userId: users[0].userId });
-          } catch (error) {
-            const AxiosError = error as AxiosError;
-            if (AxiosError.status === 404) {
-              const newUser = await insertNewUser({
-                userName: users[0].userName,
-                userId: users[0].userId,
-              });
-
-              if (newUser && dbRef.current) {
-                const transaction = dbRef.current.transaction(
-                  "currentUser",
-                  "readwrite",
-                );
-                const store = transaction.objectStore("currentUser");
-                const cursorRequest = store.openCursor();
-
-                cursorRequest.onsuccess = (event) => {
-                  const cursor = (event.target as IDBRequest).result;
-
-                  if (cursor) {
-                    const updatedValue = {
-                      ...cursor.value,
-                      ...newUser,
-                      userId: cursor.value.userId,
-                    };
-                    const updateRequest = cursor.update(updatedValue);
-
-                    updateRequest.onsuccess = () => {
-                      setUser(newUser);
-                    };
-
-                    updateRequest.onerror = () => {
-                      console.error("Error updating user in IndexedDB");
-                    };
-
-                    cursor.continue();
-                  }
-                };
-              }
-            }
-          }
-        }
-      };
-    };
-  }, [insertNewUser, toast]);
+    })();
+  }, [toast]);
 
   useEffect(() => {
     if (user?.userId) {
@@ -162,7 +72,7 @@ const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
         variant: "destructive",
       });
     });
-  }, [navigate, toast, user]);
+  }, [toast, user]);
 
   return (
     <SocketContext.Provider value={{ socket, user, setUser, dbRef }}>

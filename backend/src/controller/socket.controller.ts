@@ -28,19 +28,14 @@ export default class SocketController {
 
   async connection(callback: (socket: Socket) => void) {
     this.io.on("connection", (socket: Socket) => {
-      console.log("a user connected", socket.id);
-
       callback(socket);
 
       socket.on("disconnecting", () => {
         const rooms = Array.from(socket.rooms);
 
-        console.log("user disconnecting:", socket.id, { rooms });
-
         rooms.forEach(async (room) => {
           if (room !== socket.id) {
             this.EmitPlayerLeft(socket, room);
-            await redis.del(`room:${room}`);
           }
         });
       });
@@ -52,12 +47,9 @@ export default class SocketController {
           const rooms = Array.from(socket.rooms);
           this.customIdToSocketId.delete(socket.id);
 
-          console.log("user disconnecting:", socket.id, { rooms });
-
           rooms.forEach(async (room) => {
             if (room !== socket.id) {
               this.EmitPlayerLeft(socket, room);
-              await redis.del(`room:${room}`);
             }
           });
         }
@@ -80,6 +72,18 @@ export default class SocketController {
   }
 
   async leaveRoom(socket: Socket, room: string) {
+    const getRoom = await redis.hGetAll(room);
+
+    if (getRoom.createdBy) {
+      const getRooms = await redis.lRange(`rooms:${getRoom?.createdBy}`, 0, -1);
+
+      if (getRooms.includes(room)) {
+        await redis.lRem(`rooms:${getRoom?.createdBy}`, 0, room);
+      }
+    }
+
+    await redis.del(room);
+
     socket.leave(room);
   }
 
@@ -87,17 +91,6 @@ export default class SocketController {
     const clients = this.io.adapter.rooms.get(room);
 
     return clients || new Set<string>();
-  }
-
-  async incrementScore(userId: string, score: number) {
-    try {
-      await redis.incrBy(`user:${userId}:tic_tac_toe_high_score`, score);
-    } catch (error) {
-      throw new ApiError({
-        status: 400,
-        message: "Failed to increment score",
-      });
-    }
   }
 
   findAvailableRoom(): AvailableListRooms[] {
@@ -126,6 +119,8 @@ export default class SocketController {
     findThatRoom: RoomResponse,
     roomId: string
   ) {
+    if (!findThatRoom) return;
+
     findThatRoom.clientCount += 1;
     const roomName = findThatRoom.roomName;
 
@@ -150,7 +145,6 @@ export default class SocketController {
         return;
       }
     } catch (error) {
-      console.error("Something went wrong", error);
       this.emitGameError({
         socket,
         message: "Failed to update room",
@@ -213,7 +207,7 @@ export default class SocketController {
       this.handlePlayerWin(socket);
 
       // Handle Player Draw
-      this.handlePlayerDraw(socket);
+      this.handleGameDraw(socket);
 
       // Handle Player Left
       this.handlePlayerLeft(socket);
@@ -301,7 +295,6 @@ export default class SocketController {
             this.emitGameStart(socket, roomId);
           }
         } catch (error) {
-          console.error("Something went wrong", error);
           this.emitGameError({
             socket,
             message: "Failed to join room",
@@ -363,11 +356,10 @@ export default class SocketController {
     });
   }
 
-  private joinedEmitter(socket: Socket, roomName: string) {
-    this.emitToRoom(roomName, "emit_joined_into_room", {
-      roomName,
+  private joinedEmitter(socket: Socket, roomId: string) {
+    this.emitToRoom(roomId, "emit_joined_into_room", {
+      roomId,
     });
-    this.emitNumberOfClient(socket, roomName);
   }
 
   // TODO : Refactor this method --> Decide how to handle the game logic or event
@@ -383,20 +375,25 @@ export default class SocketController {
         const player1 = this.customIdToSocketId.get(getNumberOfClientArray[0]);
         const player2 = this.customIdToSocketId.get(getNumberOfClientArray[1]);
 
-        console.log({ player1, player2 });
-
         if (!player1 || !player2) {
-          throw new ApiError({
-            status: 400,
+          socket.emit("game_error", {
+            success: false,
             message: "Players not found",
           });
+          return;
         }
 
-        const turn = userId === player1 ? player2 : player1;
+        let turn: string | null = null;
+
+        if (userId === player1) {
+          turn = player2;
+        } else if (userId === player2) {
+          turn = player1;
+        }
 
         this.emitToRoom(roomId, "player_turn", {
-          roomId,
-          data: { boxId, turn },
+          boxId,
+          turn,
         });
       }
     );
@@ -411,9 +408,6 @@ export default class SocketController {
 
       const player1 = this.customIdToSocketId.get(getNumberOfClientArray[0]);
       const player2 = this.customIdToSocketId.get(getNumberOfClientArray[1]);
-
-      console.log({ player1, player2 });
-      console.log("User is:- ", this.customIdToSocketId);
 
       const randomPlayer = Math.floor(Math.random() * 2);
       const player1TurnValue = randomPlayer === 0 ? "X" : "O";
@@ -445,38 +439,42 @@ export default class SocketController {
   }
 
   private handlePlayAgain(socket: Socket) {
-    this.on(socket, "playAgain", async ({ roomName }: Room) => {
-      const numberOfClients = this.getNumberOfClient(roomName);
-
-      if (numberOfClients.size <= 1) {
-        this.EmitPlayerLeft(socket, roomName);
-      }
+    this.on(socket, "play_again", async ({ roomId }: { roomId: string }) => {
+      this.emitToRoom(roomId, "play_again", {});
     });
   }
 
   private handlePlayerWin(socket: Socket) {
-    this.on(socket, "player_win", ({ roomId, userId }) => {
-      const winnerPlayerSocketId = this.customIdToSocketId.get(userId);
-      const looserPlayerSocketId = Array.from(this.customIdToSocketId).find(
-        (player) => player[1] !== userId
-      );
+    this.on(socket, "player_win", ({ userId, playerName }) => {
+      const socketToUserId = Array.from(this.customIdToSocketId);
 
-      if (!winnerPlayerSocketId || !looserPlayerSocketId) {
-        throw new ApiError({
-          status: 400,
+      const winnerSocketId = socketToUserId.find(
+        ([_, id]) => id === userId
+      )?.[0];
+      const loserSocketId = socketToUserId.find(
+        ([_, id]) => id !== userId
+      )?.[0];
+
+      if (!winnerSocketId || !loserSocketId) {
+        socket.emit("game_error", {
+          success: false,
           message: "Players not found",
         });
+        return;
       }
 
-      this.socket.to(winnerPlayerSocketId).emit("game_win");
-
-      this.socket.to(looserPlayerSocketId[1]).emit("game_lose");
+      this.io.to(winnerSocketId).emit("game_win", {
+        winner: playerName,
+      });
+      this.io.to(loserSocketId).emit("game_lose", {
+        winner: playerName,
+      });
     });
   }
 
-  private handlePlayerDraw(socket: Socket) {
-    this.on(socket, "player_draw", ({ roomId }) => {
-      this.emitGameDraw(socket, roomId);
+  private handleGameDraw(socket: Socket) {
+    this.on(socket, "game_draw", ({ roomId }) => {
+      this.emitToRoom(roomId, "game_draw", {});
     });
   }
 
@@ -493,18 +491,6 @@ export default class SocketController {
     });
   }
 
-  private async emitNumberOfClient(socket: Socket, roomName: string) {
-    try {
-      const clients = this.getNumberOfClient(roomName);
-      socket.emit("number_of_clients", { roomName, count: clients.size });
-    } catch (error) {
-      throw new ApiError({
-        status: 400,
-        message: `Failed to get number of clients in room ${roomName}. ${error}`,
-      });
-    }
-  }
-
   private emitGameError({ socket, message, data }: GameError) {
     socket.emit("game_error", {
       success: false,
@@ -519,31 +505,10 @@ export default class SocketController {
     });
   }
 
-  private emitGameStart(socket: Socket, roomName: string) {
-    this.emitToRoom(roomName, "match_found", {
-      roomName,
+  private emitGameStart(socket: Socket, roomId: string) {
+    this.emitToRoom(roomId, "match_found", {
+      roomId,
       message: "game has started",
-    });
-  }
-
-  private emitGameEnd(socket: Socket, roomName: string) {
-    this.emitToRoom(roomName, "game_end", {
-      roomName,
-      message: "game has ended",
-    });
-  }
-
-  private emitGameDraw(socket: Socket, roomName: string) {
-    this.emitToRoom(roomName, "game_draw", {
-      roomName,
-      message: "game has draw",
-    });
-  }
-
-  private emitGameWin(socket: Socket, roomName: string) {
-    this.emitToRoom(roomName, "game_win", {
-      roomName,
-      message: "game has won",
     });
   }
 }

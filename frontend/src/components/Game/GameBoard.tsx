@@ -1,37 +1,16 @@
-import React from "react";
 import ExitGame from "@/components/Game/ExitGame";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
-import { LogOut, RefreshCcw, Volume2 } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { WinStatusType } from "@/types";
+import { LogOut, Volume2 } from "lucide-react";
+import Score from "../Score";
 
 interface GameBoardProps {
   uiTurn: string;
-  counter: React.MutableRefObject<number>;
-  openDialog: boolean;
-  setOpenDialog: React.Dispatch<React.SetStateAction<boolean>>;
-  winStatus: WinStatusType;
-  resetGame: () => void;
   handleExitBtn: () => void;
 }
 
-function GameBoard({
-  uiTurn,
-  counter,
-  openDialog,
-  setOpenDialog,
-  winStatus,
-  resetGame,
-  handleExitBtn,
-}: GameBoardProps) {
+function GameBoard({ uiTurn, handleExitBtn }: GameBoardProps) {
   return (
     <main className="home_page">
       <div className="home_menu">
@@ -39,12 +18,15 @@ function GameBoard({
           <div className="flex h-full w-full flex-col overflow-hidden rounded-xl bg-[#EEEEEE] p-2">
             <div className="flex h-fit flex-col">
               <div className="flex h-fit justify-between">
-                <ExitGame handleExit={handleExitBtn}>
-                  <Button variant={"coolBtn"}>
-                    <LogOut size={24} />
-                  </Button>
-                </ExitGame>
-                <Button variant={"coolBtn"}>
+                <div className="flex gap-3">
+                  <ExitGame handleExit={handleExitBtn}>
+                    <Button variant={"roundedBtn"}>
+                      <LogOut size={24} />
+                    </Button>
+                  </ExitGame>
+                  <Score />
+                </div>
+                <Button variant={"roundedBtn"}>
                   <Volume2 size={24} />
                 </Button>
               </div>
@@ -89,47 +71,6 @@ function GameBoard({
           </div>
         </div>
       </div>
-      <Dialog
-        open={openDialog}
-        onOpenChange={() => {
-          if (counter.current === 9 || winStatus.isWin) return;
-          setOpenDialog(false);
-        }}
-      >
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>
-              {counter.current === 9
-                ? "Draw"
-                : winStatus.isWin
-                  ? `${winStatus.player} in Win`
-                  : "Game Over"}
-            </DialogTitle>
-            <DialogDescription>
-              The game is over, do you want to play again?
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex items-center justify-between">
-            <Button variant={"leaveBtn"}>
-              <ExitGame handleExit={handleExitBtn}>
-                <>
-                  Exit <LogOut size={24} />
-                </>
-              </ExitGame>
-            </Button>
-            <Button
-              variant={"coolBtn"}
-              onClick={() => {
-                setOpenDialog(false);
-                resetGame();
-              }}
-            >
-              Play Again
-              <RefreshCcw />
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </main>
   );
 }

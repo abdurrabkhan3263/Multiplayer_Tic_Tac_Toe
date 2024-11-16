@@ -22,11 +22,9 @@ app.use(express.urlencoded({ extended: true }));
 
 // Routes
 import roomRoute from "./routes/room.route";
-import userRoute from "./routes/user.route";
 import socketRoute from "./routes/socket.route";
 
 app.use("/api/room", roomRoute);
-app.use("/api/user", userRoute);
 app.use("/api/socket", socketRoute);
 
 // Error handler
