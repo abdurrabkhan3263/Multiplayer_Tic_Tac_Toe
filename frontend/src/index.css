@@ -1,6 +1,8 @@
+@import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
 @layer base {
   :root {
     --radius: 0.5rem;
@@ -10,7 +12,19 @@
     --yellow: #fbca0e;
     --dark-yellow: #dfb40b;
     --alpha-yellow: #fbcc0e71;
+    --blue: #5e48be;
+    --dark-blue: #5a46b1;
   }
+}
+
+.game-font {
+  font-family: "Press Start 2P", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+img {
+  user-select: none;
 }
 
 .home_page {
@@ -19,22 +33,23 @@
   width: 100vw;
   justify-content: center;
   align-items: center;
-  background-image: url("/bg.jpg");
+  background-image: url("/images/bg-image.png");
+  background-color: var(--blue);
   background-repeat: no-repeat;
   background-size: cover;
   background-position: center;
 }
 
 .home_menu_card_bg {
-  background-image: url(/bg_menu.jpg);
+  @apply absolute left-1/2 top-[30%] w-full -translate-x-1/2 -translate-y-[30%] md:h-fit md:w-4/5;
 }
 
 .home_menu {
-  @apply fixed right-1/2 top-1/2 flex h-screen w-screen -translate-y-1/2 translate-x-1/2 items-center justify-center filter backdrop-blur-md;
+  @apply fixed right-1/2 top-1/2 flex h-screen w-screen -translate-y-1/2 translate-x-1/2 items-center justify-center;
 }
 
 .home_menu_card {
-  @apply flex h-screen w-screen flex-col rounded-lg border border-gray-300 bg-white bg-contain bg-center bg-no-repeat p-3 shadow-xl shadow-purple-300/50 sm:h-[700px] sm:w-[600px] md:bg-cover;
+  @apply relative flex h-screen w-screen flex-col rounded-3xl border bg-white/10 bg-contain bg-center bg-no-repeat p-5 shadow-xl shadow-blue-800/30 filter backdrop-blur-md sm:h-[700px] sm:w-[600px] md:bg-cover;
 }
 
 .toggle_item_active {

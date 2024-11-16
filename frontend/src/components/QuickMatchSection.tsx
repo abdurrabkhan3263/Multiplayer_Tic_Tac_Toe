@@ -6,17 +6,17 @@ import { useToast } from "@/hooks/use-toast";
 import { GameError, User } from "@/types";
 import { useNavigate } from "react-router-dom";
 import { useSocket } from "@/context/SocketProvider";
+import SearchingForAnotherPlayer from "./Rooms/SearchingForAnotherPlayer";
 
 interface QuickMatchProps {
   user: User;
-  setRoomIdForLeave: React.Dispatch<React.SetStateAction<string | null>>;
 }
 
-function QuickMatchSection({ user, setRoomIdForLeave }: QuickMatchProps) {
+function QuickMatchSection({ user }: QuickMatchProps) {
   const [matchLoading, setMatchLoading] = React.useState(false);
+  const [roomId, setRoomId] = React.useState<string>();
   const { toast } = useToast();
   const [matchSearchingDialog, setMatchSearchingDialog] = React.useState(false);
-  const roomId = useRef<{ roomName: string } | null>(null);
   const navigate = useNavigate();
   const { socket } = useSocket();
 
@@ -43,10 +43,8 @@ function QuickMatchSection({ user, setRoomIdForLeave }: QuickMatchProps) {
     });
 
     socket.on("emit_joined_into_room", ({ roomId: resRoomId }) => {
-      console.log({ roomId });
       setMatchSearchingDialog(true);
-      roomId.current = resRoomId;
-      setRoomIdForLeave(resRoomId);
+      setRoomId(resRoomId);
     });
 
     socket.on("error", (error: GameError) => {
@@ -57,7 +55,7 @@ function QuickMatchSection({ user, setRoomIdForLeave }: QuickMatchProps) {
         variant: "destructive",
       });
     });
-  }, [navigate, setRoomIdForLeave, socket, toast]);
+  }, [navigate, socket, toast]);
 
   return (
     <TabsContent value="quick_match" className="mt-5">
@@ -67,16 +65,18 @@ function QuickMatchSection({ user, setRoomIdForLeave }: QuickMatchProps) {
         onClick={handleQuickMatch}
         disabled={matchSearchingDialog}
       >
-        Quick Match{" "}
-        {matchLoading && <Loader2 size={24} className="animate-spin" />}
+        Quick Match
+        {matchLoading ? (
+          <Loader2 size={24} className="animate-spin" />
+        ) : (
+          <img src="/icons/quick.svg" alt="quick-match" className="h-9" />
+        )}
       </Button>
-      {matchSearchingDialog && (
-        <div className="mt-5">
-          <p className="text-center text-lg font-semibold">
-            Searching for a match...
-          </p>
-        </div>
-      )}
+      <SearchingForAnotherPlayer
+        dialogOpen={matchSearchingDialog}
+        setDialogOpen={setMatchSearchingDialog}
+        roomId={roomId || ""}
+      />
     </TabsContent>
   );
 }

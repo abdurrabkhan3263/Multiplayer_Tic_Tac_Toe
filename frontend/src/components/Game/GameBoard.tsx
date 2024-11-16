@@ -4,6 +4,7 @@ import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { LogOut, Volume2 } from "lucide-react";
 import Score from "../Score";
+import MusicButton from "../MusicButton";
 
 interface GameBoardProps {
   uiTurn: string;
@@ -15,26 +16,24 @@ function GameBoard({ uiTurn, handleExitBtn }: GameBoardProps) {
     <main className="home_page">
       <div className="home_menu">
         <div className="home_menu_card">
-          <div className="flex h-full w-full flex-col overflow-hidden rounded-xl bg-[#EEEEEE] p-2">
+          <div className="flex h-full w-full flex-col overflow-hidden rounded-xl">
             <div className="flex h-fit flex-col">
               <div className="flex h-fit justify-between">
                 <div className="flex gap-3">
                   <ExitGame handleExit={handleExitBtn}>
-                    <Button variant={"roundedBtn"}>
-                      <LogOut size={24} />
+                    <Button variant={"roundedBtn"} size={"roundedBtn"}>
+                      <img src="/icons/close-door.svg" alt="sound-on" />
                     </Button>
                   </ExitGame>
                   <Score />
                 </div>
-                <Button variant={"roundedBtn"}>
-                  <Volume2 size={24} />
-                </Button>
+                <MusicButton />
               </div>
 
               <div className="my-2.5 w-full">
                 <div className="relative flex items-center justify-center">
                   <div
-                    className={`absolute -top-2.5 h-3 w-3 rounded-full bg-blue-500 transition-all`}
+                    className={`bg-blue-500 absolute -top-2.5 h-3 w-3 rounded-full transition-all`}
                     style={
                       uiTurn === "X"
                         ? { left: "12.75rem" }

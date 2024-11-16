@@ -6,6 +6,7 @@ import RoomElem from "./RoomElem";
 import { getAllRoom } from "@/lib/action/room.action";
 import { AxiosError } from "axios";
 import CreateRoom from "./CreateRoom";
+import NotAvailable from "./NotAvailable";
 
 interface MyRoomProps {
   user: User;
@@ -38,7 +39,7 @@ function ListAllRooms({ user }: MyRoomProps) {
 
   return (
     <ScrollArea className={`${listRoom.length > 0 ? "h-[200px]" : ""} w-full`}>
-      <Card className="w-full">
+      <Card className="w-full bg-custom-blue text-white">
         <CardHeader className="px-4 pb-2 pt-4">
           <CardTitle>
             <div className="flex items-center justify-between">
@@ -78,7 +79,7 @@ function ListAllRooms({ user }: MyRoomProps) {
                 ),
               )
             ) : (
-              <div className="text-center">No room available</div>
+              <NotAvailable />
             )}
           </div>
         </CardContent>

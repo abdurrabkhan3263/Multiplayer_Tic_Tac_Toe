@@ -74,6 +74,8 @@ export default class SocketController {
   async leaveRoom(socket: Socket, room: string) {
     const getRoom = await redis.hGetAll(room);
 
+    console.log({ getRoom, room });
+
     if (getRoom.createdBy) {
       const getRooms = await redis.lRange(`rooms:${getRoom?.createdBy}`, 0, -1);
 
@@ -83,7 +85,6 @@ export default class SocketController {
     }
 
     await redis.del(room);
-
     socket.leave(room);
   }
 

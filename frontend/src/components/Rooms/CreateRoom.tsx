@@ -53,15 +53,15 @@ function CreateRoom({
 
       if (response.status === "success") {
         setListRoom((prev) => [...prev, response.data]);
-        // toast({
-        //   title: "Success",
-        //   description: "Room created successfully",
-        // });
+        toast({
+          title: "Success",
+          description: "Room created successfully",
+        });
       }
     } catch (error) {
       toast({
         title: "Error",
-        description: (error as any)?.message || "Something went wrong",
+        description: (error as Error)?.message || "Something went wrong",
         variant: "destructive",
       });
     } finally {
@@ -79,8 +79,9 @@ function CreateRoom({
   return (
     <Dialog open={RoomDialog} onOpenChange={setRoomDialog}>
       <DialogTrigger asChild>
-        <Button>
+        <Button variant={"gameBtn"}>
           <span>Create Room</span>
+          <img src="/icons/create.svg" alt="plus" className="h-8" />
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
@@ -89,8 +90,8 @@ function CreateRoom({
           handleRoomSubmit={handleCreateRoom}
           setRoomName={setRoomName}
           onSubmit={isEntering}
-          btnText="Create Custom Room"
-          header="Create Room"
+          btnText="Create Room"
+          header="Create a new room"
         />
       </DialogContent>
     </Dialog>

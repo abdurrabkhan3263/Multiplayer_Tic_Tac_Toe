@@ -9,6 +9,7 @@ import UserNameSection from "@/components/UserNameSection";
 import { useSocket } from "@/context/SocketProvider";
 import Score from "@/components/Score";
 import { addUser, updateUser } from "@/lib/action/user.action";
+import MusicButton from "@/components/MusicButton";
 
 function Home() {
   const { toast } = useToast();
@@ -70,7 +71,10 @@ function Home() {
 
   return (
     <div className="home_menu">
-      <div className={"home_menu_card_bg home_menu_card"}>
+      <div className={"home_menu_card"}>
+        <div className="home_menu_card_bg flex justify-center">
+          <img src="/images/tic-tac-toe-image.png" alt="bg" className="h-3/4" />
+        </div>
         <div className="flex w-full justify-between">
           <div className="flex items-center gap-6">
             <UserNameSection
@@ -86,33 +90,29 @@ function Home() {
             </UserNameSection>
             <Score />
           </div>
-          <Button variant={"roundedBtn"} size={"roundedBtn"}>
-            <img src="/icons/sound-on.svg" alt="sound-on" />
-          </Button>
+          <MusicButton />
         </div>
-        <div
-          className={"mb-16 flex h-full w-full flex-col items-end gap-3 pt-3"}
-        >
-          <div className="mb-16 flex h-full w-full flex-col justify-end gap-3">
-            <Button
-              size={"full"}
-              variant={"gameBtn"}
-              onClick={handlePlayWithFriends}
-            >
-              Play with <Users size={24} />
+        <div className="mb-20 flex h-full w-full flex-col justify-end gap-3">
+          <Button
+            size={"full"}
+            variant={"gameBtn"}
+            onClick={handlePlayWithFriends}
+          >
+            Play with
+            <img src="/icons/users.svg" alt="friends" className="h-9" />
+          </Button>
+          <JoinRoom
+            handleAddUser={handleAddUser}
+            IsAddingUser={IsAddingUser}
+            user={user}
+            nameDialogOpen={nameDialogOpen}
+            setNameDialogOpen={setNameDialogOpen}
+          >
+            <Button size={"full"} variant={"gameBtn"}>
+              Play with
+              <img src="/icons/internet.svg" alt="laptop" className="h-9" />
             </Button>
-            <JoinRoom
-              handleAddUser={handleAddUser}
-              IsAddingUser={IsAddingUser}
-              user={user}
-              nameDialogOpen={nameDialogOpen}
-              setNameDialogOpen={setNameDialogOpen}
-            >
-              <Button size={"full"} variant={"gameBtn"}>
-                Play with <BsLaptop size={24} />
-              </Button>
-            </JoinRoom>
-          </div>
+          </JoinRoom>
         </div>
       </div>
     </div>

@@ -38,7 +38,11 @@ function RoomForm({
           />
           <Button size="full" variant="gameBtn" type="submit">
             {btnText}
-            {onSubmit && <Loader2 size={24} className="animate-spin" />}
+            {onSubmit ? (
+              <Loader2 size={24} className="animate-spin" />
+            ) : (
+              <img src="/icons/create.svg" alt="plus" className="h-8" />
+            )}
           </Button>
         </div>
       </form>

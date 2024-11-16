@@ -31,19 +31,9 @@ const JoinRoom: React.FC<JoinRoomProps> = ({
   nameDialogOpen,
   setNameDialogOpen,
 }) => {
-  const { socket } = useSocket();
-  const [roomIdForLeave, setRoomIdForLeave] = React.useState<string | null>(
-    null,
-  );
   const [openDialog, setOpenDialog] = React.useState(false);
 
   const handleOpenChange = () => {
-    if (roomIdForLeave) {
-      socket.emit("player_left", {
-        roomId: roomIdForLeave,
-      });
-      setRoomIdForLeave(null);
-    }
     setOpenDialog((prev) => !prev);
   };
 
@@ -62,7 +52,7 @@ const JoinRoom: React.FC<JoinRoomProps> = ({
       ) : (
         <Dialog open={openDialog} onOpenChange={handleOpenChange}>
           <DialogTrigger asChild>{children}</DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="text-white sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle>Join Room</DialogTitle>
               <DialogDescription>
@@ -74,7 +64,7 @@ const JoinRoom: React.FC<JoinRoomProps> = ({
                 <TabsTrigger value="quick_match">Quick Match</TabsTrigger>
                 <TabsTrigger value="custom_room">Custom Room</TabsTrigger>
               </TabsList>
-              <QuickMatch user={user} setRoomIdForLeave={setRoomIdForLeave} />
+              <QuickMatch user={user} />
               <CustomRoom user={user} />
             </Tabs>
           </DialogContent>

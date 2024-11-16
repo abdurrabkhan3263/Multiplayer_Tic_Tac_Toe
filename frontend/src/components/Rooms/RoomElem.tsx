@@ -16,7 +16,6 @@ interface RoomElemProps {
   participants: string;
   userId: string;
   roomId: string;
-  setRoomIdForLeave: React.Dispatch<React.SetStateAction<string | null>>;
 }
 
 function RoomElem({
@@ -32,7 +31,7 @@ function RoomElem({
   const { toast } = useToast();
   const socket = io("/game");
   const [searchingToAnotherUser, setSearchingToAnotherUser] =
-    React.useState<boolean>(true);
+    React.useState<boolean>(false);
   const navigate = useNavigate();
   const [dialogOpen, setDialogOpen] = React.useState(false);
 
@@ -90,10 +89,6 @@ function RoomElem({
   };
 
   const handleMatchFound = ({ roomId }: { roomId: string }) => {
-    toast({
-      title: "Match Found",
-      description: `You are matched with another player in ${roomId}`,
-    });
     navigate(`/home/play/${roomId}`);
   };
 
@@ -143,6 +138,7 @@ function RoomElem({
         <SearchingForAnotherPlayer
           dialogOpen={searchingToAnotherUser}
           setDialogOpen={setSearchingToAnotherUser}
+          roomId={`room:${roomId}`}
         />
       </DialogContent>
     </Dialog>

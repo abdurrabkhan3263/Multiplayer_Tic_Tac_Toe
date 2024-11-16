@@ -21,7 +21,9 @@ const buttonVariants = cva(
           "hover:bg-neutral-100 hover:text-neutral-900 dark:hover:bg-neutral-800 dark:hover:text-neutral-50",
         link: "text-neutral-900 underline-offset-4 hover:underline dark:text-neutral-50",
         roundedBtn:
-          "bg-yellow border border-black shadow-md shadow-yellow hover:shadow-lg hover:bg-dark-yellow",
+          "bg-custom-yellow border border-black shadow-md shadow-yellow hover:shadow-lg hover:shadow-yellow hover:bg-dark-yellow",
+        gameBtn:
+          "bg-custom-yellow cursor-pointer rounded-lg border-b-[4px] border-[#eead14] px-6 py-2 text-white transition-all hover:-translate-y-[1px] hover:border-b-[6px] hover:brightness-110 active:translate-y-[2px] active:border-b-[2px] active:brightness-90",
         leaveBtn:
           "bg-red-500 text-neutral-50 hover:bg-red-600 dark:bg-red-400 dark:text-neutral-900 dark:hover:bg-red-500",
         coolBtn:
@@ -33,7 +35,7 @@ const buttonVariants = cva(
         sm: "h-9 rounded-md px-3",
         lg: "h-11 rounded-md px-8",
         icon: "h-10 w-10",
-        full: "h-11 w-full",
+        full: "h-11 w-full py-2",
       },
     },
     defaultVariants: {

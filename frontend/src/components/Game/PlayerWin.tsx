@@ -92,10 +92,16 @@ function PlayerWin({
         </DialogHeader>
         <div className="flex justify-between">
           <Button variant={"gameBtn"} onClick={handlePlayAgain}>
-            Play Again <Repeat2 />
+            Play Again
+            <img
+              src="/icons/play-again.svg"
+              alt="refresh"
+              className="h-w-6 w-6"
+            />
           </Button>
           <Button variant={"gameBtn"} onClick={handleGoToHome}>
-            Home <House />
+            Home
+            <img src="/icons/home-menu.svg" alt="home" className="h-w-6 w-6" />
           </Button>
         </div>
       </DialogContent>

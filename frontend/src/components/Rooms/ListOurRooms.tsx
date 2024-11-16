@@ -6,6 +6,7 @@ import RoomElem from "./RoomElem";
 import { getMyRoom } from "@/lib/action/room.action";
 import { AxiosError } from "axios";
 import CreateRoom from "./CreateRoom";
+import NotAvailable from "./NotAvailable";
 
 interface ListOurRoomsProps {
   userName: string;
@@ -38,12 +39,12 @@ function ListOurRooms({ userName, userId }: ListOurRoomsProps) {
   }, []);
 
   return (
-    <ScrollArea className={`${listRoom.length > 0 ? "h-[200px]" : ""} w-full`}>
-      <Card className="w-full">
+    <ScrollArea className={`${listRoom.length > 0 ? "h-[200px]" : ""}`}>
+      <Card className="w-full bg-custom-blue text-white">
         <CardHeader className="px-4 pb-2 pt-4">
           <CardTitle>
             <div className="flex items-center justify-between">
-              <div className="text-lg font-semibold">All Rooms</div>
+              <div className="text-lg font-semibold">My Rooms</div>
               <CreateRoom
                 userId={userId}
                 userName={userName}
@@ -79,7 +80,7 @@ function ListOurRooms({ userName, userId }: ListOurRoomsProps) {
                 ),
               )
             ) : (
-              <div className="text-center">No room available</div>
+              <NotAvailable />
             )}
           </div>
         </CardContent>

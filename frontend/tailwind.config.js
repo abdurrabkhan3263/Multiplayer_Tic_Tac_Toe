@@ -12,7 +12,12 @@ export default {
       colors: {},
       backgroundColor: {
         bg: "var(--bg)",
-        yellow: "var(--yellow)",
+        "custom-yellow": "var(--yellow)",
+        "dark-yellow": "var(--dark-yellow)",
+        "custom-blue": "var(--blue)",
+        "dark-blue": "var(--dark-blue)",
+      },
+      borderColor: {
         "dark-yellow": "var(--dark-yellow)",
       },
       boxShadowColor: {
@@ -21,6 +26,9 @@ export default {
       textColor: {
         lightText: "var(--text)",
         darkText: "var(--darkText)",
+      },
+      fontFamily: {
+        gameFont: ["Press Start 2P", "cursive"],
       },
     },
   },
