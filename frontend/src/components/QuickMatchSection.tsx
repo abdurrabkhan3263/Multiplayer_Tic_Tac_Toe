@@ -9,9 +9,10 @@ import { useSocket } from "@/context/SocketProvider";
 
 interface QuickMatchProps {
   user: User;
+  setRoomIdForLeave: React.Dispatch<React.SetStateAction<string | null>>;
 }
 
-function QuickMatchSection({ user }: QuickMatchProps) {
+function QuickMatchSection({ user, setRoomIdForLeave }: QuickMatchProps) {
   const [matchLoading, setMatchLoading] = React.useState(false);
   const { toast } = useToast();
   const [matchSearchingDialog, setMatchSearchingDialog] = React.useState(false);
@@ -36,14 +37,16 @@ function QuickMatchSection({ user }: QuickMatchProps) {
   };
 
   useEffect(() => {
-    socket.on("match_found", ({ roomName }) => {
+    socket.on("match_found", ({ roomId: resRoomId }) => {
       setMatchSearchingDialog(false);
-      navigate(`/home/play/${roomName}`);
+      navigate(`/home/play/${resRoomId}`);
     });
 
-    socket.on("emit_joined_into_room", (data: any) => {
+    socket.on("emit_joined_into_room", ({ roomId: resRoomId }) => {
+      console.log({ roomId });
       setMatchSearchingDialog(true);
-      roomId.current = data;
+      roomId.current = resRoomId;
+      setRoomIdForLeave(resRoomId);
     });
 
     socket.on("error", (error: GameError) => {
@@ -54,7 +57,7 @@ function QuickMatchSection({ user }: QuickMatchProps) {
         variant: "destructive",
       });
     });
-  }, [navigate, socket, toast]);
+  }, [navigate, setRoomIdForLeave, socket, toast]);
 
   return (
     <TabsContent value="quick_match" className="mt-5">

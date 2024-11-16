@@ -39,7 +39,7 @@ const RoomProvider: React.FC<RoomProviderProps> = ({ children }) => {
         const findRoom = await getRoomById({ roomId: roomId ?? "" });
 
         if (findRoom?.data) {
-          setRoomId(findRoom?.data?.roomId ?? "");
+          setRoomId(roomId ?? "");
         } else {
           navigate("/home");
         }

@@ -21,7 +21,7 @@ export default class RoomController {
     } = req.body as CreateRoom;
     const roomId = uuidv4();
 
-    if (!roomName.trim() || !password.trim()) {
+    if (!roomName.trim()) {
       throw new ApiError({
         status: 400,
         message: "Name and password is required",
@@ -42,6 +42,7 @@ export default class RoomController {
       activeUsers: "[]",
       clientCount: 0,
       type: password ? "private" : "public",
+      createdBy: userId,
     });
 
     if (!createHash) {
@@ -98,6 +99,7 @@ export default class RoomController {
       await Promise.all(
         rooms.map(async (room) => {
           const roomList = await redis.lRange(room, 0, -1);
+          console.log(roomList);
           return await Promise.all(
             roomList.map(async (roomId) => await redis.hGetAll(roomId))
           );
@@ -123,21 +125,18 @@ export default class RoomController {
     const { userId } = req.params;
     const roomKey = `rooms:${userId}`;
 
+    console.log({ userId });
+
     const room = await redis.lRange(roomKey, 0, -1);
 
-    if (!room) {
-      return res.status(400).json(
-        new ResponseHandler({
-          statusCode: 400,
-          message: "Failed to get room",
-        })
-      );
-    }
+    const allRoomsData = await Promise.all(
+      room.map((roomId) => redis.hGetAll(roomId))
+    );
 
     return res.status(200).json(
       new ResponseHandler({
         statusCode: 200,
-        data: room.map((data) => JSON.parse(data)),
+        data: allRoomsData,
         message: "Room fetched successfully",
       })
     );

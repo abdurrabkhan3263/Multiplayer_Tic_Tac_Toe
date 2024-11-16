@@ -1,16 +1,11 @@
 import { useRoomContext } from "@/context/RoomContext";
 import { useSocket } from "@/context/SocketProvider";
-import { useEffect } from "react";
 
 function Score() {
   const { user } = useSocket();
   const { user: roomUser } = useRoomContext();
 
-  useEffect(() => {
-    console.log({ user, roomUser });
-  }, [user, roomUser]);
-
-  if (!user && !roomUser) return <></>;
+  if ((!user || user?.tic_tac_toe_high_score <= 0) && (!roomUser || roomUser?.tic_tac_toe_high_score <= 0)) return <></>
 
   return (
     <div className="flex items-center gap-3">

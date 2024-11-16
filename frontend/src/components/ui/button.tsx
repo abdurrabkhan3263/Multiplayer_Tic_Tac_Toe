@@ -20,8 +20,8 @@ const buttonVariants = cva(
         ghost:
           "hover:bg-neutral-100 hover:text-neutral-900 dark:hover:bg-neutral-800 dark:hover:text-neutral-50",
         link: "text-neutral-900 underline-offset-4 hover:underline dark:text-neutral-50",
-        gameBtn:
-          "bg-blue-500 text-neutral-50 hover:bg-blue-600 dark:bg-blue-400 dark:text-neutral-900 dark:hover:bg-blue-500",
+        roundedBtn:
+          "bg-yellow border border-black shadow-md shadow-yellow hover:shadow-lg hover:bg-dark-yellow",
         leaveBtn:
           "bg-red-500 text-neutral-50 hover:bg-red-600 dark:bg-red-400 dark:text-neutral-900 dark:hover:bg-red-500",
         coolBtn:
@@ -29,6 +29,7 @@ const buttonVariants = cva(
       },
       size: {
         default: "h-10 px-4 py-2",
+        roundedBtn: "h-14 w-14 p-2 rounded-full",
         sm: "h-9 rounded-md px-3",
         lg: "h-11 rounded-md px-8",
         icon: "h-10 w-10",

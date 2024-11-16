@@ -36,7 +36,6 @@ export default class SocketController {
         rooms.forEach(async (room) => {
           if (room !== socket.id) {
             this.EmitPlayerLeft(socket, room);
-            await redis.del(`room:${room}`);
           }
         });
       });
@@ -51,7 +50,6 @@ export default class SocketController {
           rooms.forEach(async (room) => {
             if (room !== socket.id) {
               this.EmitPlayerLeft(socket, room);
-              await redis.del(`room:${room}`);
             }
           });
         }
@@ -74,6 +72,18 @@ export default class SocketController {
   }
 
   async leaveRoom(socket: Socket, room: string) {
+    const getRoom = await redis.hGetAll(room);
+
+    if (getRoom.createdBy) {
+      const getRooms = await redis.lRange(`rooms:${getRoom?.createdBy}`, 0, -1);
+
+      if (getRooms.includes(room)) {
+        await redis.lRem(`rooms:${getRoom?.createdBy}`, 0, room);
+      }
+    }
+
+    await redis.del(room);
+
     socket.leave(room);
   }
 
@@ -346,11 +356,10 @@ export default class SocketController {
     });
   }
 
-  private joinedEmitter(socket: Socket, roomName: string) {
-    this.emitToRoom(roomName, "emit_joined_into_room", {
-      roomName,
+  private joinedEmitter(socket: Socket, roomId: string) {
+    this.emitToRoom(roomId, "emit_joined_into_room", {
+      roomId,
     });
-    this.emitNumberOfClient(socket, roomName);
   }
 
   // TODO : Refactor this method --> Decide how to handle the game logic or event
@@ -367,10 +376,11 @@ export default class SocketController {
         const player2 = this.customIdToSocketId.get(getNumberOfClientArray[1]);
 
         if (!player1 || !player2) {
-          throw new ApiError({
-            status: 400,
+          socket.emit("game_error", {
+            success: false,
             message: "Players not found",
           });
+          return;
         }
 
         let turn: string | null = null;
@@ -481,18 +491,6 @@ export default class SocketController {
     });
   }
 
-  private async emitNumberOfClient(socket: Socket, roomName: string) {
-    try {
-      const clients = this.getNumberOfClient(roomName);
-      socket.emit("number_of_clients", { roomName, count: clients.size });
-    } catch (error) {
-      throw new ApiError({
-        status: 400,
-        message: `Failed to get number of clients in room ${roomName}. ${error}`,
-      });
-    }
-  }
-
   private emitGameError({ socket, message, data }: GameError) {
     socket.emit("game_error", {
       success: false,
@@ -507,9 +505,9 @@ export default class SocketController {
     });
   }
 
-  private emitGameStart(socket: Socket, roomName: string) {
-    this.emitToRoom(roomName, "match_found", {
-      roomName,
+  private emitGameStart(socket: Socket, roomId: string) {
+    this.emitToRoom(roomId, "match_found", {
+      roomId,
       message: "game has started",
     });
   }

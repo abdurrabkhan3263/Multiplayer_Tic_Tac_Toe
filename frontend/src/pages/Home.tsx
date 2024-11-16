@@ -80,14 +80,14 @@ function Home() {
               nameDialogOpen={nameDialogOpen}
               setNameDialogOpen={setNameDialogOpen}
             >
-              <Button variant={"gameBtn"}>
-                <Edit size={24} />
+              <Button variant={"roundedBtn"} size={"roundedBtn"}>
+                <img src="/icons/edit-profile.svg" alt="avatar" />
               </Button>
             </UserNameSection>
             <Score />
           </div>
-          <Button variant={"gameBtn"}>
-            <Volume2 size={24} />
+          <Button variant={"roundedBtn"} size={"roundedBtn"}>
+            <img src="/icons/sound-on.svg" alt="sound-on" />
           </Button>
         </div>
         <div
