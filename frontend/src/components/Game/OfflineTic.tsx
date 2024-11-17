@@ -10,6 +10,7 @@ function OfflineTic() {
   const [turn, setTurn] = useState<"X" | "O">(
     turnArr[Math.floor(Math.random() * 2)] as "X" | "O",
   );
+  const [board, setBoard] = useState<string[]>(Array(9).fill(""));
   const [winStatus, setWinStatus] = useState<WinStatusType>({
     isWin: false,
     isDraw: false,
@@ -33,10 +34,7 @@ function OfflineTic() {
     counter.current = 0;
   };
 
-  const checkIsWin = async () => {
-    const boxes = document.querySelectorAll(".tic_tac_box");
-    const boxArray = Array.from(boxes);
-
+  const checkIsWin = useCallback(async () => {
     const winPatterns = [
       [0, 1, 2],
       [3, 4, 5],
@@ -50,48 +48,43 @@ function OfflineTic() {
 
     const isWin = winPatterns.some((pattern) => {
       const [a, b, c] = pattern;
-      const boxA = boxArray[a]?.firstElementChild?.id;
-      const boxB = boxArray[b]?.firstElementChild?.id;
-      const boxC = boxArray[c]?.firstElementChild?.id;
+      if (!board[a] || !board[b] || !board[c]) return false;
 
-      if (!boxA || !boxB || !boxC) return false;
-
-      return boxA === boxB && boxB === boxC;
+      if (board[a] === board[b] && board[b] === board[c]) {
+        return true;
+      }
     });
 
     if (isWin) {
+      setBoard(Array(9).fill(""));
       setWinStatus({
         isWin: true,
         isDraw: false,
         isLose: false,
       });
     }
-  };
-
-  const AddDivElement = useCallback(() => {
-    return `<div id="${turn}" class="toggle_item_inactive select-none">
-    <div class="w-h-20 mx-2 h-20 overflow-hidden}">
-      <img src="/${turn}.png" class="h-full w-full object-cover"/>
-    </div>`;
-  }, [turn]);
+  }, [board]);
 
   const handleClick = useCallback(
     (e: MouseEvent) => {
       const target = e.currentTarget as HTMLElement;
+      const clickedIndex = parseInt(target.id);
 
       if (target.firstChild) return;
 
-      target.innerHTML = AddDivElement();
-      target.firstElementChild?.classList.replace(
-        "toggle_item_inactive",
-        "toggle_item_active",
-      );
+      setBoard((prevBoard) => [
+        ...prevBoard.slice(0, clickedIndex),
+        turn,
+        ...prevBoard.slice(clickedIndex + 1),
+      ]);
+
       counter.current += 1;
 
       if (counter.current >= 5) {
         checkIsWin();
       }
       if (counter.current === 9) {
+        setBoard(Array(9).fill(""));
         setWinStatus({
           isDraw: true,
           isWin: false,
@@ -101,7 +94,7 @@ function OfflineTic() {
 
       toggleTurn();
     },
-    [AddDivElement, toggleTurn],
+    [checkIsWin, toggleTurn, turn],
   );
 
   const handleExit = () => {
@@ -141,7 +134,7 @@ function OfflineTic() {
 
   return (
     <>
-      <GameBoard uiTurn={turn} handleExitBtn={handleExit} />
+      <GameBoard uiTurn={turn} handleExitBtn={handleExit} board={board} />
       <PlayerWin
         open={winStatus}
         setOpenDialog={

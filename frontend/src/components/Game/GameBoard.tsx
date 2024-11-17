@@ -9,9 +9,12 @@ import MusicButton from "../MusicButton";
 interface GameBoardProps {
   uiTurn: string;
   handleExitBtn: () => void;
+  board: string[];
 }
 
-function GameBoard({ uiTurn, handleExitBtn }: GameBoardProps) {
+function GameBoard({ uiTurn, handleExitBtn, board }: GameBoardProps) {
+  console.log(board);
+
   return (
     <main className="home_page">
       <div className="home_menu">
@@ -33,7 +36,7 @@ function GameBoard({ uiTurn, handleExitBtn }: GameBoardProps) {
               <div className="my-2.5 w-full">
                 <div className="relative flex items-center justify-center">
                   <div
-                    className={`bg-blue-500 absolute -top-2.5 h-3 w-3 rounded-full transition-all`}
+                    className={`absolute -top-2.5 h-3 w-3 rounded-full bg-blue-500 transition-all`}
                     style={
                       uiTurn === "X"
                         ? { left: "12.75rem" }
@@ -41,31 +44,53 @@ function GameBoard({ uiTurn, handleExitBtn }: GameBoardProps) {
                     }
                   ></div>
                   <div className={cn("mx-2 h-12 w-12 overflow-hidden")}>
-                    <img src="/sx.png" className="h-full w-full object-cover" />
-                  </div>
-                  <span className="mx-2 h-14 w-14 overflow-hidden">
                     <img
-                      src="/vs.png"
+                      src="/icons/smX.svg"
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                  <span className="mx-2 h-11 w-11 overflow-hidden">
+                    <img
+                      src="/icons/vs.svg"
                       className="h-full w-full object-contain"
                     />
                   </span>
                   <div className={cn("mx-2 h-12 w-12 overflow-hidden")}>
-                    <img src="/so.png" className="h-full w-full object-cover" />
+                    <img
+                      src="/icons/smO.svg"
+                      className="h-full w-full object-cover"
+                    />
                   </div>
                 </div>
               </div>
             </div>
             <Separator className="my-2.5 bg-bg" />
-            <div
-              className="mt-2 grid flex-1 grid-cols-3 grid-rows-3 gap-2 bg-cover bg-center bg-no-repeat md:h-full md:w-full"
-              style={{ backgroundImage: "url(/Bar.png)" }}
-            >
-              {Array.from({ length: 9 }).map((_, index) => (
-                <div
-                  key={index}
-                  className="tic_tac_box flex items-center justify-center"
-                ></div>
-              ))}
+            <div className="flex w-full justify-center">
+              <div
+                className="grid aspect-square w-full max-w-lg grid-cols-3 gap-2 bg-contain bg-center bg-no-repeat"
+                style={{
+                  backgroundImage: "url(/images/Bar.png)",
+                }}
+              >
+                {board.map((item, index) => (
+                  <div
+                    key={index}
+                    id={index.toString()}
+                    className="tic_tac_box flex aspect-square cursor-pointer items-center justify-center"
+                  >
+                    {item && (
+                      <div className="select-none">
+                        <div className="w-h-20 mx-2 h-20 overflow-hidden">
+                          <img
+                            src={`/icons/${item}.svg`}
+                            className="h-full w-full object-cover"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>

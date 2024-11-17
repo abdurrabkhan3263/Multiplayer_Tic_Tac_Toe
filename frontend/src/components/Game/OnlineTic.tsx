@@ -82,7 +82,7 @@ function OnlineTic() {
 
     return `<div id="${currentTurnValue}" class="toggle_item_inactive select-none">
     <div class="w-h-20 mx-2 h-20 overflow-hidden}">
-      <img src="/${currentTurnValue}.png" class="h-full w-full object-cover"/>
+      <img src="/icons/${currentTurnValue}.svg" class="h-full w-full object-cover"/>
     </div>`;
   }, [gameData]);
 
