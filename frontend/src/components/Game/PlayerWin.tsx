@@ -47,9 +47,7 @@ function PlayerWin({
     if (open.isWin) {
       setMessage({
         title: "We have a Winner! 🎉",
-        description: open?.playerName
-          ? `Congratulations to Player ${open.playerName} for winning the game!`
-          : "Congratulations! You won the game!",
+        description: `Congratulations to Player ${open.playerName} for winning the game!`,
       });
     } else if (open.isDraw) {
       setMessage({
@@ -59,9 +57,7 @@ function PlayerWin({
     } else if (open.isLose) {
       setMessage({
         title: "You Lose! 😢",
-        description: open?.playerName
-          ? `${open.playerName} won the game! Better luck next time.`
-          : "You lost the game! Better luck next time.",
+        description: `${open.playerName} won the game! Better luck next time.`,
       });
     } else {
       setMessage({
@@ -85,10 +81,12 @@ function PlayerWin({
         }
       }}
     >
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="text-white sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>{message?.title}</DialogTitle>
-          <DialogDescription>{message?.description}</DialogDescription>
+          <DialogDescription className="text-white">
+            {message?.description}
+          </DialogDescription>
         </DialogHeader>
         <div className="flex justify-between">
           <Button variant={"gameBtn"} onClick={handlePlayAgain}>

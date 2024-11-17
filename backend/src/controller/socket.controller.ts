@@ -322,7 +322,9 @@ export default class SocketController {
 
           const findRoomIntoRedis = await redis.hGetAll(roomId);
 
-          if (!findRoomIntoRedis) {
+          console.log({ findRoomIntoRedis });
+
+          if (!findRoomIntoRedis?.roomId) {
             this.emitGameError({
               socket,
               message: "Room not found",

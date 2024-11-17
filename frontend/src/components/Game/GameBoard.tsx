@@ -2,7 +2,6 @@ import ExitGame from "@/components/Game/ExitGame";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
-import { LogOut, Volume2 } from "lucide-react";
 import Score from "../Score";
 import MusicButton from "../MusicButton";
 
@@ -10,11 +9,15 @@ interface GameBoardProps {
   uiTurn: string;
   handleExitBtn: () => void;
   board: string[];
+  handleClick: ({ index }: { index: number }) => void;
 }
 
-function GameBoard({ uiTurn, handleExitBtn, board }: GameBoardProps) {
-  console.log(board);
-
+function GameBoard({
+  uiTurn,
+  handleExitBtn,
+  board,
+  handleClick,
+}: GameBoardProps) {
   return (
     <main className="home_page">
       <div className="home_menu">
@@ -76,7 +79,8 @@ function GameBoard({ uiTurn, handleExitBtn, board }: GameBoardProps) {
                   <div
                     key={index}
                     id={index.toString()}
-                    className="tic_tac_box flex aspect-square cursor-pointer items-center justify-center"
+                    className={`flex aspect-square cursor-pointer items-center justify-center`}
+                    onClick={() => handleClick({ index })}
                   >
                     {item && (
                       <div className="select-none">

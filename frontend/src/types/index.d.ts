@@ -54,3 +54,5 @@ export declare type PlayerWinMessage = {
   title: string;
   description: string;
 };
+
+export declare type Player = "X" | "O";

@@ -1,100 +1,83 @@
 import GameBoard from "./GameBoard";
-import { cn } from "@/lib/utils";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import PlayerWin from "./PlayerWin";
-import { WinStatusType } from "@/types";
+import { Player, WinStatusType } from "@/types";
+import { INITIAL_WIN_STATUS, WIN_PATTERNS } from "@/lib/constants";
 
 function OfflineTic() {
   const turnArr = ["X", "O"];
   const [turn, setTurn] = useState<"X" | "O">(
     turnArr[Math.floor(Math.random() * 2)] as "X" | "O",
   );
-  const [board, setBoard] = useState<string[]>(Array(9).fill(""));
-  const [winStatus, setWinStatus] = useState<WinStatusType>({
-    isWin: false,
-    isDraw: false,
-    isLose: false,
-  });
+  const [board, setBoard] = useState<Player[]>(Array(9).fill(null));
+  const [winStatus, setWinStatus] = useState<WinStatusType>(INITIAL_WIN_STATUS);
   const counter = useRef(0);
   const navigate = useNavigate();
 
   const toggleTurn = useCallback(() => {
     setTurn((prevTurn) => (prevTurn === "X" ? "O" : "X"));
-  }, []);
+  }, [setTurn]);
 
   const resetGame = () => {
-    const boxes = document.querySelectorAll(".tic_tac_box");
-    const boxArray = Array.from(boxes);
-
-    boxArray.forEach((box) => {
-      box.innerHTML = "";
-    });
-
+    setBoard(Array(9).fill(""));
     counter.current = 0;
   };
 
-  const checkIsWin = useCallback(async () => {
-    const winPatterns = [
-      [0, 1, 2],
-      [3, 4, 5],
-      [6, 7, 8],
-      [0, 3, 6],
-      [1, 4, 7],
-      [2, 5, 8],
-      [0, 4, 8],
-      [2, 4, 6],
-    ];
+  const checkIsWin = useCallback(
+    (currentBoard: Player[], currentPlayer: Player) => {
+      const isWin = WIN_PATTERNS.some((pattern) => {
+        const [a, b, c] = pattern;
 
-    const isWin = winPatterns.some((pattern) => {
-      const [a, b, c] = pattern;
-      if (!board[a] || !board[b] || !board[c]) return false;
+        if (!currentBoard[a] || !currentBoard[b] || !currentBoard[c])
+          return false;
 
-      if (board[a] === board[b] && board[b] === board[c]) {
-        return true;
-      }
-    });
-
-    if (isWin) {
-      setBoard(Array(9).fill(""));
-      setWinStatus({
-        isWin: true,
-        isDraw: false,
-        isLose: false,
+        if (
+          currentBoard[a] === currentBoard[b] &&
+          currentBoard[b] === currentBoard[c]
+        ) {
+          return true;
+        }
       });
-    }
-  }, [board]);
+
+      if (isWin) {
+        resetGame();
+        setWinStatus({
+          isWin: true,
+          isDraw: false,
+          isLose: false,
+          playerName: currentPlayer,
+        });
+      }
+    },
+    [],
+  );
 
   const handleClick = useCallback(
-    (e: MouseEvent) => {
-      const target = e.currentTarget as HTMLElement;
-      const clickedIndex = parseInt(target.id);
+    ({ index }: { index: number }) => {
+      if (board[index]) return;
 
-      if (target.firstChild) return;
-
-      setBoard((prevBoard) => [
-        ...prevBoard.slice(0, clickedIndex),
-        turn,
-        ...prevBoard.slice(clickedIndex + 1),
-      ]);
+      const newBoard = [...board];
+      newBoard[index] = turn;
+      setBoard(newBoard);
 
       counter.current += 1;
 
-      if (counter.current >= 5) {
-        checkIsWin();
-      }
       if (counter.current === 9) {
-        setBoard(Array(9).fill(""));
+        resetGame();
         setWinStatus({
           isDraw: true,
           isWin: false,
           isLose: false,
         });
       }
+      if (counter.current >= 5) {
+        checkIsWin(newBoard, turn);
+      }
 
       toggleTurn();
     },
-    [checkIsWin, toggleTurn, turn],
+    [board, checkIsWin, turn, toggleTurn],
   );
 
   const handleExit = () => {
@@ -116,25 +99,14 @@ function OfflineTic() {
     });
   };
 
-  useEffect(() => {
-    const boxes = document.querySelectorAll(".tic_tac_box");
-
-    if (!boxes) return;
-
-    boxes.forEach((box) => {
-      (box as HTMLElement).addEventListener("click", handleClick);
-    });
-
-    return () => {
-      boxes.forEach((box) => {
-        (box as HTMLElement).removeEventListener("click", handleClick);
-      });
-    };
-  }, [handleClick]);
-
   return (
     <>
-      <GameBoard uiTurn={turn} handleExitBtn={handleExit} board={board} />
+      <GameBoard
+        uiTurn={turn}
+        handleExitBtn={handleExit}
+        board={board}
+        handleClick={handleClick}
+      />
       <PlayerWin
         open={winStatus}
         setOpenDialog={

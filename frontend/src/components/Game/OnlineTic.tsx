@@ -5,55 +5,32 @@ import { useSocket } from "@/context/SocketProvider";
 import { useNavigate } from "react-router-dom";
 import PlayerLeft from "./PlayerLeft";
 import PlayerWin from "./PlayerWin";
-import { GameData, ToggleTurn, WinStatusType } from "@/types";
+import { GameData, Player, ToggleTurn, WinStatusType } from "@/types";
 import { increaseHighScore as increaseHighScoreInDB } from "@/lib/action/user.action";
+import { INITIAL_WIN_STATUS, WIN_PATTERNS } from "@/lib/constants";
 
 function OnlineTic() {
   const [gameData, setGameData] = useState<GameData | null>(null);
-
   const counter = useRef(0);
-  const [winStatus, setWinStatus] = useState<WinStatusType>({
-    isWin: false,
-    isDraw: false,
-    isLose: false,
-    playerName: "",
-  });
+  const [winStatus, setWinStatus] = useState<WinStatusType>(INITIAL_WIN_STATUS);
+  const [board, setBoard] = useState<Player[]>(Array(9).fill(null));
   const [leftDialog, setLeftDialog] = useState<boolean>(false);
   const navigate = useNavigate();
   const { socket } = useSocket();
   const { roomId, user, setUser } = useRoomContext();
 
   const resetGame = () => {
-    const boxes = document.querySelectorAll(".tic_tac_box");
-    const boxArray = Array.from(boxes);
-
-    boxArray.forEach((box) => {
-      box.innerHTML = "";
-    });
-
+    setGameData(null);
+    setBoard(Array(9).fill(null));
     counter.current = 0;
   };
 
   const checkIsWin = useCallback(() => {
-    const boxes = document.querySelectorAll(".tic_tac_box");
-    const boxArray = Array.from(boxes);
-
-    const winPatterns = [
-      [0, 1, 2],
-      [3, 4, 5],
-      [6, 7, 8],
-      [0, 3, 6],
-      [1, 4, 7],
-      [2, 5, 8],
-      [0, 4, 8],
-      [2, 4, 6],
-    ];
-
-    const isWin = winPatterns.some((pattern) => {
+    const isWin = WIN_PATTERNS.some((pattern) => {
       const [a, b, c] = pattern;
-      const boxA = boxArray[a]?.firstElementChild?.id;
-      const boxB = boxArray[b]?.firstElementChild?.id;
-      const boxC = boxArray[c]?.firstElementChild?.id;
+      const boxA = board[a];
+      const boxB = board[b];
+      const boxC = board[c];
 
       if (!boxA || !boxB || !boxC) return false;
 
@@ -72,36 +49,15 @@ function OnlineTic() {
     if (counter.current === 9) {
       socket.emit("game_draw", { roomId });
     }
-  }, [gameData?.turn, user?.userId, user?.userName, socket, roomId]);
-
-  const AddDivElement = useCallback(() => {
-    const currentTurnValue: "X" | "O" | null =
-      gameData && gameData.turn ? gameData[gameData.turn] : null;
-
-    if (!currentTurnValue) return "";
-
-    return `<div id="${currentTurnValue}" class="toggle_item_inactive select-none">
-    <div class="w-h-20 mx-2 h-20 overflow-hidden}">
-      <img src="/icons/${currentTurnValue}.svg" class="h-full w-full object-cover"/>
-    </div>`;
-  }, [gameData]);
+  }, [board, gameData?.turn, user?.userId, user?.userName, socket, roomId]);
 
   const handleClick = useCallback(
-    (e: MouseEvent) => {
-      const target = e.currentTarget as HTMLElement;
-
-      if (target.firstChild) return;
+    ({ index }: { index: number }) => {
+      if (board[index]) return;
 
       if (gameData?.turn !== user?.userId) {
-        target.parentElement?.classList.add("animate-shake");
         return;
-      } else {
-        target.parentElement?.classList.remove("animate-shake");
       }
-
-      const index = target.parentElement
-        ? Array.from(target.parentElement.children).indexOf(target)
-        : -1;
 
       socket.emit("player_turn", {
         roomId,
@@ -109,7 +65,7 @@ function OnlineTic() {
         userId: gameData?.turn,
       });
     },
-    [gameData?.turn, roomId, socket, user?.userId],
+    [board, gameData?.turn, roomId, socket, user?.userId],
   );
 
   const handleExitBtn = () => {
@@ -131,35 +87,17 @@ function OnlineTic() {
     }
   }, [setUser, user]);
 
-  // Event Listeners for boxes
-
-  useEffect(() => {
-    const boxes = document.querySelectorAll(".tic_tac_box");
-
-    if (!boxes) return;
-
-    boxes.forEach((box) => {
-      (box as HTMLElement).addEventListener("click", handleClick);
-    });
-
-    return () => {
-      boxes.forEach((box) => {
-        (box as HTMLElement).removeEventListener("click", handleClick);
-      });
-    };
-  }, [handleClick]);
-
-  // Game Start
+  // * Game Start event
 
   useEffect(() => {
     socket.emit("start_game", { roomId });
   }, [roomId, socket]);
 
-  // Game Start event
-  useEffect(() => {
-    // Handle Functions
+  // * ALL SOCKET EVENTS HERE
 
+  useEffect(() => {
     const gameStarted = (data: GameData) => {
+      console.log({ data });
       setGameData(data);
     };
 
@@ -193,15 +131,12 @@ function OnlineTic() {
 
     const handleTurn = ({ boxId, turn }: ToggleTurn) => {
       if (!gameData) return;
-      const boxes = document.querySelectorAll(".tic_tac_box");
-      const boxArray = Array.from(boxes);
-      boxArray[boxId].innerHTML = AddDivElement();
-      boxArray[boxId].firstElementChild?.classList.replace(
-        "toggle_item_inactive",
-        "toggle_item_active",
-      );
+      const newBoard = [...board];
+      newBoard[boxId] = gameData[turn];
+      setBoard(newBoard);
 
       counter.current += 1;
+
       setGameData(
         (prev) =>
           ({
@@ -250,21 +185,15 @@ function OnlineTic() {
       socket.off("player_left", handlePlayerLeft);
       socket.off("play_again", handlePlayAgain);
     };
-  }, [
-    AddDivElement,
-    checkIsWin,
-    gameData,
-    increaseHighScore,
-    roomId,
-    socket,
-    user,
-  ]);
+  }, [board, checkIsWin, gameData, increaseHighScore, roomId, socket, user]);
 
   return (
     <>
       <GameBoard
         uiTurn={gameData ? gameData[gameData.turn] : "X"}
         handleExitBtn={handleExitBtn}
+        handleClick={handleClick}
+        board={board}
       />
       <PlayerLeft
         roomId={roomId}

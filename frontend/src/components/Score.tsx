@@ -5,7 +5,11 @@ function Score() {
   const { user } = useSocket();
   const { user: roomUser } = useRoomContext();
 
-  if ((!user || user?.tic_tac_toe_high_score <= 0) && (!roomUser || roomUser?.tic_tac_toe_high_score <= 0)) return <></>
+  if (
+    (!user || user?.tic_tac_toe_high_score <= 0) &&
+    (!roomUser || roomUser?.tic_tac_toe_high_score <= 0)
+  )
+    return <></>;
 
   return (
     <div className="flex items-center gap-3">
@@ -17,7 +21,11 @@ function Score() {
         {user?.tic_tac_toe_high_score || roomUser?.tic_tac_toe_high_score}
       </p>
       <div className="h-10 w-10">
-        <img src="/score.svg" alt="" className="h-full w-full object-cover" />
+        <img
+          src="/icons/score.svg"
+          alt=""
+          className="h-full w-full object-cover"
+        />
       </div>
     </div>
   );
