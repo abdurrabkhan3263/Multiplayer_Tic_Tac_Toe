@@ -72,7 +72,7 @@ function GameBoard({
               <div
                 className="grid aspect-square w-full max-w-lg grid-cols-3 gap-2 bg-contain bg-center bg-no-repeat"
                 style={{
-                  backgroundImage: "url(/images/Bar.png)",
+                  backgroundImage: "url(/images/bar.png)",
                 }}
               >
                 {board.map((item, index) => (

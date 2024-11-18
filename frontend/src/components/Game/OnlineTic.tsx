@@ -20,36 +20,38 @@ function OnlineTic() {
   const { roomId, user, setUser } = useRoomContext();
 
   const resetGame = () => {
-    setGameData(null);
     setBoard(Array(9).fill(null));
     counter.current = 0;
   };
 
-  const checkIsWin = useCallback(() => {
-    const isWin = WIN_PATTERNS.some((pattern) => {
-      const [a, b, c] = pattern;
-      const boxA = board[a];
-      const boxB = board[b];
-      const boxC = board[c];
+  const checkIsWin = useCallback(
+    ({ board }: { board: Player[] }) => {
+      const isWin = WIN_PATTERNS.some((pattern) => {
+        const [a, b, c] = pattern;
+        const boxA = board[a];
+        const boxB = board[b];
+        const boxC = board[c];
 
-      if (!boxA || !boxB || !boxC) return false;
+        if (!boxA || !boxB || !boxC) return false;
 
-      return boxA === boxB && boxB === boxC;
-    });
+        return boxA === boxB && boxB === boxC;
+      });
 
-    if (isWin) {
-      if (gameData?.turn === user?.userId) {
-        socket.emit("player_win", {
-          userId: user?.userId,
-          playerName: user?.userName,
-        });
+      if (isWin) {
+        if (gameData?.turn === user?.userId) {
+          socket.emit("player_win", {
+            userId: user?.userId,
+            playerName: user?.userName,
+          });
+        }
       }
-    }
 
-    if (counter.current === 9) {
-      socket.emit("game_draw", { roomId });
-    }
-  }, [board, gameData?.turn, user?.userId, user?.userName, socket, roomId]);
+      if (counter.current === 9) {
+        socket.emit("game_draw", { roomId });
+      }
+    },
+    [gameData?.turn, user?.userId, user?.userName, socket, roomId],
+  );
 
   const handleClick = useCallback(
     ({ index }: { index: number }) => {
@@ -91,17 +93,18 @@ function OnlineTic() {
 
   useEffect(() => {
     socket.emit("start_game", { roomId });
-  }, [roomId, socket]);
+  }, [roomId, socket, user]);
 
   // * ALL SOCKET EVENTS HERE
 
   useEffect(() => {
     const gameStarted = (data: GameData) => {
-      console.log({ data });
+      console.log("Game Data is:- ", data);
       setGameData(data);
     };
 
     const handleGameWin = ({ winner }: { winner: string }) => {
+      console.log("Server notify you win the game");
       increaseHighScore();
       setWinStatus({
         isWin: true,
@@ -131,8 +134,9 @@ function OnlineTic() {
 
     const handleTurn = ({ boxId, turn }: ToggleTurn) => {
       if (!gameData) return;
+
       const newBoard = [...board];
-      newBoard[boxId] = gameData[turn];
+      newBoard[boxId] = gameData[gameData?.turn];
       setBoard(newBoard);
 
       counter.current += 1;
@@ -146,7 +150,7 @@ function OnlineTic() {
       );
 
       if (counter.current >= 5) {
-        checkIsWin();
+        checkIsWin({ board: newBoard });
       }
     };
 

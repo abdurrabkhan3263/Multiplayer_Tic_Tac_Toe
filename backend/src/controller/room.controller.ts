@@ -99,7 +99,6 @@ export default class RoomController {
       await Promise.all(
         rooms.map(async (room) => {
           const roomList = await redis.lRange(room, 0, -1);
-          console.log(roomList);
           return await Promise.all(
             roomList.map(async (roomId) => await redis.hGetAll(roomId))
           );
@@ -124,8 +123,6 @@ export default class RoomController {
   ) {
     const { userId } = req.params;
     const roomKey = `rooms:${userId}`;
-
-    console.log({ userId });
 
     const room = await redis.lRange(roomKey, 0, -1);
 

@@ -57,6 +57,7 @@ const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
     }
 
     socket.on("connect", () => {
+      console.log("Connected to socket server");
       socket.emit("register", { userId: user?.userId });
     });
 
