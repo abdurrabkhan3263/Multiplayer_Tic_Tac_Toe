@@ -4,14 +4,11 @@ import React, {
   useContext,
   useState,
   useRef,
-  useCallback,
 } from "react";
 import { socket } from "@/lib/socket.ts";
 import { useToast } from "@/hooks/use-toast";
 import { User } from "@/types";
-import { addUser, getUser } from "@/lib/action/user.action";
-import { DB_NAME } from "@/lib/constants";
-import { AxiosError } from "axios";
+import { getUser } from "@/lib/action/user.action";
 
 interface SocketContextType {
   socket: typeof socket;

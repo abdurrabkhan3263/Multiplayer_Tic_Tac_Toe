@@ -61,7 +61,7 @@ export declare type PlayGame = {
 };
 
 export declare type GameStart = {
-  userId?: string;
+  userId: string;
   roomId: string;
 };
 
@@ -72,7 +72,7 @@ export declare type GameError = {
 };
 
 export declare type RoomResultResponse = {
-  status: "winner" | "draw";
+  status: "win" | "draw";
   userId?: string;
 };
 

@@ -92,7 +92,7 @@ function OnlineTic() {
   // * Game Start event
 
   useEffect(() => {
-    socket.emit("start_game", { roomId });
+    socket.emit("rejoin_room", { roomId });
   }, [roomId, socket, user]);
 
   // * ALL SOCKET EVENTS HERE
