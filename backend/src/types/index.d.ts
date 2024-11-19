@@ -9,9 +9,10 @@ export declare type User = {
 export declare type Room = {
   roomId: string;
   roomName: string;
-  activeUsers: string;
-  clientCount: number;
   type: "public" | "private";
+  status: "WAITING" | "IN_PROGRESS" | "COMPLETED";
+  createdAt: Date;
+  playerCount: number;
 };
 
 export declare type RoomResponse = {
@@ -43,7 +44,7 @@ export declare type CreateRoom = {
 
 export declare type JoinRoom = {
   id: string;
-  userId: string;
+  user: User;
   roomName: string;
   password: string;
 };
@@ -68,6 +69,11 @@ export declare type GameError = {
   socket: Socket;
   message: string;
   data?: any;
+};
+
+export declare type RoomResultResponse = {
+  status: "winner" | "draw";
+  userId?: string;
 };
 
 export const enum ROOM_TYPE {

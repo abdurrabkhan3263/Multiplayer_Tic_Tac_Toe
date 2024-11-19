@@ -1,5 +1,4 @@
 import redis from "../db/client";
-import { ApiError } from "../utils/ErrorHandler";
 import server from "../server";
 import { Socket, Server, Namespace } from "socket.io";
 import {
@@ -8,8 +7,7 @@ import {
   GameStart,
   JoinRoom,
   PlayGame,
-  Room,
-  RoomResponse,
+  RoomResultResponse,
   User,
 } from "../types";
 import { v4 as uuid } from "uuid";
@@ -26,7 +24,7 @@ interface GameState {
   board: string[];
   currentTurn: string;
   status: "WAITING" | "IN_PROGRESS" | "COMPLETED";
-  player1: PlayerInfo;
+  player1?: PlayerInfo;
   player2?: PlayerInfo;
   roomId: string;
   createdAt: number;
@@ -47,7 +45,7 @@ export default class SocketController {
     setInterval(() => this.cleanupStaleRooms(), 30 * 60 * 1000);
   }
 
-  // * method for handling socket connection
+  // ? method for handling socket connection
 
   async connection(callback: (socket: Socket) => void) {
     this.io.on("connection", (socket: Socket) => {
@@ -113,6 +111,48 @@ export default class SocketController {
     }
   }
 
+  // ? Socket Helper Methods
+
+  async emit(event: string, data: any) {
+    this.socket.emit(event, data);
+  }
+
+  async on(socket: Socket, event: string, callback: (data: any) => void) {
+    socket.on(event, callback);
+  }
+
+  async emitToRoom(room: string, event: string, data: any) {
+    this.io.to(room).emit(event, data);
+  }
+
+  async leaveRoom(socket: Socket, room: string) {
+    const userId = this.socketToUserMapping.get(socket.id);
+    const gameData = this.gameRooms.get(room);
+
+    if (userId) {
+      this.userToRoomMapping.delete(userId);
+    }
+    this.socketToUserMapping.delete(socket.id);
+
+    if (!gameData) return;
+
+    if (gameData.player1?.socketId === socket.id) {
+      gameData.player1 = undefined;
+    } else if (gameData.player2?.socketId === socket.id) {
+      gameData.player2 = undefined;
+    }
+
+    if (gameData.player1 === undefined && gameData.player2 === undefined) {
+      this.gameRooms.delete(room);
+      await redis.del(room);
+    }
+
+    socket.leave(room);
+    this.emit_playerLeft(room);
+  }
+
+  // ? Room Methods
+
   private getRoomClients(room: string): Set<string> {
     const clients = this.io.adapter.rooms.get(room);
 
@@ -138,83 +178,6 @@ export default class SocketController {
 
     return availableRooms;
   }
-
-  async updateAndJoinRoom(
-    socket: Socket,
-    userId: string,
-    findThatRoom: RoomResponse,
-    roomId: string
-  ) {
-    if (!findThatRoom) return;
-
-    findThatRoom.clientCount += 1;
-    const roomName = findThatRoom.roomName;
-
-    const activeUsersArray = JSON.parse(findThatRoom.activeUsers);
-    activeUsersArray.push(userId);
-
-    try {
-      const updateRoom = await redis.hSet(roomId, {
-        ...findThatRoom,
-        activeUsers: JSON.stringify(activeUsersArray),
-      });
-
-      socket.join(roomId);
-      this.joinedEmitter(socket, roomId);
-
-      if (updateRoom === null || updateRoom === undefined) {
-        this.emitGameError({
-          socket,
-          message: "Failed to update room",
-          data: { roomName },
-        });
-        return;
-      }
-    } catch (error) {
-      this.emitGameError({
-        socket,
-        message: "Failed to update room",
-        data: { roomName },
-      });
-      return;
-    }
-  }
-
-  // async createRoom(socket: Socket, user: User) {
-  //   const id = uuid();
-  //   const roomId = `room:${id}`;
-
-  //   try {
-  //     const insertIntoRedis = await redis.hSet(roomId, {
-  //       roomId: id,
-  //       roomName: "Random_room",
-  //       type: "public",
-  //       activeUsers: JSON.stringify([user.userId]),
-  //       clientCount: 1,
-  //     });
-
-  //     if (!insertIntoRedis) {
-  //       this.emitGameError({
-  //         socket,
-  //         message: "Failed to create room",
-  //         data: { roomId },
-  //       });
-  //       return;
-  //     }
-
-  //     await redis.expire(roomId, 60 * 10); // 10 minutes
-  //   } catch (error) {
-  //     this.emitGameError({
-  //       socket,
-  //       message: "Failed to create room",
-  //       data: { roomId },
-  //     });
-  //     return;
-  //   }
-
-  //   socket.join(roomId);
-  //   this.joinedEmitter(socket, roomId);
-  // }
 
   async getRoomFromRedis({ roomId }: { roomId: string }) {
     const findRoom = await redis.hGetAll(roomId);
@@ -266,9 +229,9 @@ export default class SocketController {
       await redis.setEx(roomId, 60 * 10, JSON.stringify(initialState));
 
       socket.join(roomId);
-      this.emitRoomCreated(socket, roomId);
+      this.emit_joinedIntoRoom(roomId);
     } catch (error) {
-      this.emitGameError({
+      this.emit_gameError({
         socket,
         message: "Failed to create room",
         data: { roomId },
@@ -276,36 +239,7 @@ export default class SocketController {
     }
   }
 
-  // ? All the socket methods for emitting and listening to events
-
-  async emit(event: string, data: any) {
-    this.socket.emit(event, data);
-  }
-
-  async on(socket: Socket, event: string, callback: (data: any) => void) {
-    socket.on(event, callback);
-  }
-
-  async emitToRoom(room: string, event: string, data: any) {
-    this.io.to(room).emit(event, data);
-  }
-
-  async leaveRoom(socket: Socket, room: string) {
-    const getRoom = await redis.hGetAll(room);
-
-    if (getRoom.createdBy) {
-      const getRooms = await redis.lRange(`rooms:${getRoom?.createdBy}`, 0, -1);
-
-      if (getRooms.includes(room)) {
-        await redis.lRem(`rooms:${getRoom?.createdBy}`, 0, room);
-      }
-    }
-
-    await redis.del(room);
-    socket.leave(room);
-  }
-
-  // ?  method for handling game logic
+  // ?  Initialize Game
 
   async playGame() {
     this.connection((socket: Socket) => {
@@ -319,60 +253,61 @@ export default class SocketController {
       this.handleJoinIntoRoom(socket);
 
       // Handle Player Win or Lose
-      this.handlePlayerWin(socket);
+      this.handler_gameWin(socket);
 
       // Handle Player Draw
-      this.handleGameDraw(socket);
+      this.handler_gameDraw(socket);
 
       // Handle Player Left
-      this.handlePlayerLeft(socket);
+      this.handler_playerLeft(socket);
 
       // Handle Play Again
-      this.handlePlayAgain(socket);
+      this.handler_playAgain(socket);
 
       // Handle Game Start
-      this.handleGameStart(socket);
+      this.handler_gameStart(socket);
 
       // Handle Play Event
-      this.handlePlayEvent(socket);
+      this.handler_playEvent(socket);
 
       // Handle Chatting
-      this.handleChatting(socket);
+      this.handler_chatting(socket);
     });
   }
 
-  // ? Separate the game logic from the socket connection logic
+  // ? Joining into Room Methods
 
   private handleJoinIntoCustomRoom(socket: Socket) {
     this.on(
       socket,
       "join_into_custom_room",
-      async ({ userId, roomName, password, id }: JoinRoom) => {
-        if (!userId || !roomName || !password || !id) {
-          this.emitGameError({
+      async ({ user, roomName, password, id }: JoinRoom) => {
+        if (!user || !roomName || !id) {
+          this.emit_gameError({
             socket,
             message: "Invalid data",
-            data: { userId, roomName, password, id },
+            data: {},
           });
           return;
         }
 
         try {
           const roomId = `room:${id}`;
-          const numberOfClient = this.getRoomClients(roomId);
+          const gameData = this.gameRooms.get(roomId);
 
-          if (numberOfClient.size >= 2) {
-            this.emitGameError({
+          if (gameData && gameData.status !== "WAITING") {
+            this.emit_gameError({
               socket,
-              message: "Room is full",
+              message: "Room is already full",
               data: { roomName },
             });
             return;
           }
+
           const findRoom = await this.getRoomFromRedis({ roomId });
 
           if (!findRoom) {
-            this.emitGameError({
+            this.emit_gameError({
               socket,
               message: "Room not found",
               data: { roomName },
@@ -380,8 +315,8 @@ export default class SocketController {
             return;
           }
 
-          if (findRoom.password !== password) {
-            this.emitGameError({
+          if (findRoom.password && findRoom.password !== password) {
+            this.emit_gameError({
               socket,
               message: "Invalid password",
               data: { roomName },
@@ -389,17 +324,36 @@ export default class SocketController {
             return;
           }
 
-          if (findRoom.activeUsers.includes(userId)) {
-            socket.join(roomId);
+          if (!gameData) {
+            this.createRoom(socket, user);
           } else {
-            await this.updateAndJoinRoom(socket, userId, findRoom, roomId);
-          }
+            gameData.player2 = {
+              socketId: socket.id,
+              userId: user.userId,
+              symbol: gameData.player1?.symbol === "X" ? "O" : "X",
+              userName: roomName,
+            };
+            gameData.status = "IN_PROGRESS";
 
-          if (numberOfClient.size >= 2) {
-            this.emitGameStart(socket, roomId);
+            if (!gameData.player1) return;
+
+            gameData.currentTurn =
+              Math.random() < 0.5
+                ? gameData.player1.userId
+                : gameData.player2.userId;
+
+            await redis.hSet(roomId, {
+              ...findRoom,
+              playerCount: 2,
+            });
+
+            this.userToRoomMapping.set(user?.userId, roomId);
+
+            socket.join(roomId);
+            this.emit_gameStart(roomId);
           }
         } catch (error) {
-          this.emitGameError({
+          this.emit_gameError({
             socket,
             message: "Failed to join room",
             data: { roomName },
@@ -426,7 +380,7 @@ export default class SocketController {
         const gameState = this.gameRooms.get(roomId);
 
         if (!gameState) {
-          this.emitGameError({
+          this.emit_gameError({
             socket,
             message: "Room not found",
             data: { roomId },
@@ -441,6 +395,9 @@ export default class SocketController {
           userName: user.userName,
         };
         gameState.status = "IN_PROGRESS";
+
+        if (!gameState.player1) return;
+
         gameState.currentTurn =
           Math.random() < 0.5
             ? gameState.player1.userId
@@ -449,23 +406,16 @@ export default class SocketController {
         this.userToRoomMapping.set(user.userId, roomId);
 
         socket.join(roomId);
-
-        this.emitToRoom(roomId, "game_started", gameState);
+        this.emitGameStart(socket, gameState.roomId);
       } else {
         await this.createRoom(socket, user);
       }
     });
   }
 
-  private joinedEmitter(socket: Socket, roomId: string) {
-    this.emitToRoom(roomId, "emit_joined_into_room", {
-      roomId,
-    });
-  }
+  // ? Event Handlers
 
-  // TODO : Refactor this method --> Decide how to handle the game logic or event
-
-  private handlePlayEvent(socket: Socket) {
+  private handler_playEvent(socket: Socket) {
     this.on(
       socket,
       "player_turn",
@@ -500,7 +450,7 @@ export default class SocketController {
     );
   }
 
-  private handleGameStart(socket: Socket) {
+  private handler_gameStart(socket: Socket) {
     this.on(socket, "start_game", async ({ roomId }: GameStart) => {
       socket.join(roomId);
 
@@ -533,20 +483,20 @@ export default class SocketController {
     });
   }
 
-  private handlePlayerLeft(socket: Socket) {
+  private handler_playerLeft(socket: Socket) {
     this.on(socket, "player_left", ({ roomId }) => {
-      this.EmitPlayerLeft(socket, roomId);
+      this.emit_playerLeft(roomId);
       this.leaveRoom(socket, roomId);
     });
   }
 
-  private handlePlayAgain(socket: Socket) {
+  private handler_playAgain(socket: Socket) {
     this.on(socket, "play_again", async ({ roomId }: { roomId: string }) => {
       this.emitToRoom(roomId, "play_again", {});
     });
   }
 
-  private handlePlayerWin(socket: Socket) {
+  private handler_gameWin(socket: Socket) {
     this.on(socket, "player_win", ({ userId, playerName }) => {
       const socketToUserId = Array.from(this.customIdToSocketId);
 
@@ -580,26 +530,21 @@ export default class SocketController {
     });
   }
 
-  private handleGameDraw(socket: Socket) {
+  private handler_gameDraw(socket: Socket) {
     this.on(socket, "game_draw", ({ roomId }) => {
       this.emitToRoom(roomId, "game_draw", {});
     });
   }
 
-  private handleChatting(socket: Socket) {
+  private handler_chatting(socket: Socket) {
     this.on(socket, "chat", ({ userName, msg, roomName }) => {
       this.emitToRoom(roomName, "chat", { userName, msg });
     });
   }
 
-  private handleRegister(socket: Socket) {
-    this.on(socket, "register", ({ userId }: { userId: string }) => {
-      if (!userId) return;
-      this.customIdToSocketId.set(socket.id, userId);
-    });
-  }
+  // ? Emitters
 
-  private emitGameError({ socket, message, data }: GameError) {
+  private emit_gameError({ socket, message, data }: GameError) {
     socket.emit("game_error", {
       success: false,
       message,
@@ -607,22 +552,21 @@ export default class SocketController {
     });
   }
 
-  private EmitPlayerLeft(socket: Socket, roomId: string) {
+  private emit_playerLeft(roomId: string) {
     this.emitToRoom(roomId, "player_left", {
       message: "player left the room",
     });
   }
 
-  private emitGameStart(socket: Socket, roomId: string) {
-    this.emitToRoom(roomId, "match_found", {
-      roomId,
-      message: "game has started",
-    });
+  private emit_gameStart(roomId: string) {
+    this.emitToRoom(roomId, "match_found", roomId);
   }
 
-  private emitRoomCreated(socket: Socket, roomId: string) {
-    this.io.to(socket.id).emit("room_created", {
-      roomId,
-    });
+  private emit_joinedIntoRoom(roomId: string) {
+    this.emitToRoom(roomId, "emit_joined_into_room", roomId);
+  }
+
+  private emit_gameResult(roomId: string, data: RoomResultResponse) {
+    this.emitToRoom(roomId, "game_status", data);
   }
 }

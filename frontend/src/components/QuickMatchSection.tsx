@@ -37,14 +37,14 @@ function QuickMatchSection({ user }: QuickMatchProps) {
   };
 
   useEffect(() => {
-    socket.on("match_found", ({ roomId: resRoomId }) => {
+    socket.on("match_found", (roomId) => {
       setMatchSearchingDialog(false);
-      navigate(`/home/play/${resRoomId}`);
+      navigate(`/home/play/${roomId}`);
     });
 
-    socket.on("emit_joined_into_room", ({ roomId: resRoomId }) => {
+    socket.on("emit_joined_into_room", (roomId: string) => {
       setMatchSearchingDialog(true);
-      setRoomId(resRoomId);
+      setRoomId(roomId);
     });
 
     socket.on("error", (error: GameError) => {
