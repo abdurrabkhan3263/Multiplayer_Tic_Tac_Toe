@@ -29,6 +29,7 @@ interface GameState {
   player2?: PlayerInfo;
   roomId: string;
   createdAt: number;
+  [key: string]: any;
 }
 
 export default class SocketController {
@@ -40,7 +41,9 @@ export default class SocketController {
   private socketToUserMapping: Map<string, string> = new Map();
 
   constructor() {
-    this.socket = new Server(server);
+    this.socket = new Server(server, {
+      connectionStateRecovery: {},
+    });
     this.io = this.socket.of("/game");
 
     setInterval(() => this.cleanupStaleRooms(), 30 * 60 * 1000);
@@ -136,21 +139,19 @@ export default class SocketController {
     }
     this.socketToUserMapping.delete(socket.id);
 
-    if (!gameData) return;
-
-    if (gameData.player1?.socketId === socket.id) {
+    if (gameData?.player1?.socketId === socket.id) {
       gameData.player1 = undefined;
-    } else if (gameData.player2?.socketId === socket.id) {
+    } else if (gameData?.player2?.socketId === socket.id) {
       gameData.player2 = undefined;
     }
 
-    if (gameData.player1 === undefined && gameData.player2 === undefined) {
+    if (gameData?.player1 === undefined && gameData?.player2 === undefined) {
       this.gameRooms.delete(room);
       await redis.del(room);
     }
 
-    socket.leave(room);
     this.emit_playerLeft(room);
+    socket.leave(room);
   }
 
   // ? Room Methods
@@ -223,7 +224,7 @@ export default class SocketController {
         playerCount: 1,
       });
 
-      await redis.setEx(roomId, 60 * 10, JSON.stringify(initialState));
+      await redis.expire(roomId, 60 * 10);
 
       socket.join(roomId);
       this.emit_joinedIntoRoom(roomId);
@@ -250,7 +251,7 @@ export default class SocketController {
 
     if (board.every((box) => box !== "")) {
       return {
-        status: true,
+        status: "draw",
       };
     }
 
@@ -436,55 +437,53 @@ export default class SocketController {
   }
 
   private handler_playerMove(socket: Socket) {
-    this.on(
-      socket,
-      "player_turn",
-      async ({ roomId, boxId, userId }: PlayGame) => {
-        const gameState = this.gameRooms.get(roomId);
+    this.on(socket, "player_move", async ({ roomId, boxId }: PlayGame) => {
+      const gameState = this.gameRooms.get(roomId);
+      const userId = this.socketToUserMapping.get(socket.id);
 
-        if (!gameState || gameState.status !== "IN_PROGRESS") {
-          this.emit_gameError({
-            socket,
-            message: "Invalid game state",
-            data: { roomId },
-          });
-          return;
-        }
-
-        if (gameState.currentTurn !== userId) {
-          this.emit_gameError({
-            socket,
-            message: "Not your turn",
-            data: { roomId },
-          });
-          return;
-        }
-
-        const player =
-          gameState.player1?.userId === userId ? "player1" : "player2";
-        gameState.board[boxId] = gameState[player]?.symbol!;
-        gameState.currentTurn =
-          gameState[player]?.userId === userId
-            ? gameState.player2?.userId!
-            : gameState.player1?.userId!;
-
-        const gameResult = this.checkGameStatus(gameState.board, userId);
-
-        if (gameResult) {
-          this.emit_gameResult(roomId, gameResult as RoomResultResponse);
-          return;
-        }
-
-        this.emit_playerTurn(roomId, gameState.currentTurn);
+      if (!gameState || gameState.status !== "IN_PROGRESS") {
+        this.emit_gameError({
+          socket,
+          message: "Invalid game state",
+          data: { roomId },
+        });
+        return;
       }
-    );
+
+      if (gameState.currentTurn !== userId) {
+        this.emit_gameError({
+          socket,
+          message: "Not your turn",
+          data: { roomId },
+        });
+        return;
+      }
+
+      const player =
+        gameState.player1?.userId === userId ? "player1" : "player2";
+
+      gameState.board[boxId] = gameState[player]?.symbol!;
+      gameState.currentTurn =
+        player === "player1"
+          ? gameState?.player2?.userId!
+          : gameState?.player1?.userId!;
+
+      const gameResult = this.checkGameStatus(gameState.board, userId);
+
+      if (gameResult) {
+        this.emit_gameResult(roomId, gameResult as RoomResultResponse);
+        gameState.status = "COMPLETED";
+        gameState.currentTurn = userId;
+        return;
+      }
+
+      this.emit_playerMove(roomId, gameState);
+    });
   }
 
   private handler_rejoinIntoRoom(socket: Socket) {
     this.on(socket, "rejoin_room", async ({ roomId, userId }: GameStart) => {
       const gameState = this.gameRooms.get(roomId);
-
-      console.log("Player is going to rejoin again");
 
       if (!gameState) {
         this.emit_gameError({
@@ -500,6 +499,7 @@ export default class SocketController {
           player.socketId = socket.id;
           player.active = true;
           this.userToRoomMapping.set(userId, roomId);
+          this.socketToUserMapping.set(socket.id, userId);
         }
       });
 
@@ -509,13 +509,13 @@ export default class SocketController {
   }
 
   private handler_playerLeft(socket: Socket) {
-    this.on(socket, "player_left", ({ roomId }) => {
+    this.on(socket, "player_left", (roomId) => {
       this.leaveRoom(socket, roomId);
     });
   }
 
   private handler_playAgain(socket: Socket) {
-    this.on(socket, "play_again", async ({ roomId }: { roomId: string }) => {
+    this.on(socket, "play_again", async (roomId: string) => {
       const gameState = this.gameRooms.get(roomId);
 
       if (!gameState) {
@@ -580,11 +580,7 @@ export default class SocketController {
     this.emitToRoom(roomId, "game_started", data);
   }
 
-  private emit_playerTurn(roomId: string, userId: string) {
-    this.emitToRoom(roomId, "player_turn", userId);
-  }
-
-  private emit_playerBuffer(roomId: string) {
-    this.emitToRoom(roomId, "player_buffer", {});
+  private emit_playerMove(roomId: string, gameState: GameState) {
+    this.emitToRoom(roomId, "player_move", gameState);
   }
 }

@@ -31,9 +31,7 @@ function PlayerLeft({
     navigate("/home");
     setOpenDialog(false);
     resetGame();
-    socket.emit("player_left", {
-      roomId,
-    });
+    socket.emit("player_left", roomId);
   };
 
   return (

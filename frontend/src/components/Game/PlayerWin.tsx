@@ -8,7 +8,6 @@ import {
 } from "@/components/ui/dialog";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../ui/button";
-import { House, Repeat2 } from "lucide-react";
 import { useSocket } from "@/context/SocketProvider";
 import { PlayerWinMessage, WinStatusType } from "@/types";
 
@@ -40,7 +39,7 @@ function PlayerWin({
 
     if (!roomId) return;
 
-    socket.emit("player_left", { roomId });
+    socket.emit("player_left", roomId);
   };
 
   useEffect(() => {

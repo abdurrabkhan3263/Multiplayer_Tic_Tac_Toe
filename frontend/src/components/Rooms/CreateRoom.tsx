@@ -29,8 +29,8 @@ function CreateRoom({
       const formData = new FormData(e.currentTarget);
 
       const result = roomObj.safeParse({
-        name: formData.get("roomName") as string,
-        password: formData.get("password") as string,
+        name: formData.get("roomName"),
+        password: formData.get("password"),
       });
 
       if (!result.success) {
@@ -47,7 +47,7 @@ function CreateRoom({
 
       const response = await addNewRoom({
         name: result.data.name,
-        password: result.data.password,
+        password: result.data?.password || "",
         userId,
       });
 

@@ -4,20 +4,37 @@ import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import Score from "../Score";
 import MusicButton from "../MusicButton";
+import { useEffect, useState } from "react";
 
 interface GameBoardProps {
-  uiTurn: string;
+  onlineGameData?: {
+    playerName: string;
+    currentSymbol: "X" | "O";
+    symbol: "X" | "O";
+  };
   handleExitBtn: () => void;
   board: string[];
   handleClick: ({ index }: { index: number }) => void;
 }
 
 function GameBoard({
-  uiTurn,
+  onlineGameData,
   handleExitBtn,
   board,
   handleClick,
 }: GameBoardProps) {
+  const [ourTurn, setOurTurn] = useState(false);
+
+  useEffect(() => {
+    if (!onlineGameData) return;
+
+    if (onlineGameData.currentSymbol === onlineGameData.symbol) {
+      setOurTurn(true);
+    } else {
+      setOurTurn(false);
+    }
+  }, [onlineGameData]);
+
   return (
     <main className="home_page">
       <div className="home_menu">
@@ -39,16 +56,14 @@ function GameBoard({
               <div className="my-2.5 w-full">
                 <div className="relative flex items-center justify-center">
                   <div
-                    className={`absolute -top-2.5 h-3 w-3 rounded-full bg-blue-500 transition-all`}
-                    style={
-                      uiTurn === "X"
-                        ? { left: "12.75rem" }
-                        : { right: "12.75rem" }
-                    }
-                  ></div>
-                  <div className={cn("mx-2 h-12 w-12 overflow-hidden")}>
+                    className={cn(
+                      ourTurn && "border-2",
+                      "mx-2 h-12 w-12 overflow-hidden",
+                    )}
+                  >
+                    <span>You</span>
                     <img
-                      src="/icons/smX.svg"
+                      src={`/icons/sm${onlineGameData?.symbol || "X"}.svg`}
                       className="h-full w-full object-cover"
                     />
                   </div>
@@ -58,9 +73,15 @@ function GameBoard({
                       className="h-full w-full object-contain"
                     />
                   </span>
-                  <div className={cn("mx-2 h-12 w-12 overflow-hidden")}>
+                  <div
+                    className={cn(
+                      !ourTurn && "border-2",
+                      "mx-2 h-12 w-12 overflow-hidden",
+                    )}
+                  >
+                    <span>{onlineGameData?.playerName}</span>
                     <img
-                      src="/icons/smO.svg"
+                      src={`/icons/sm${onlineGameData ? (onlineGameData?.symbol === "X" ? "O" : "X") : "O"}.svg`}
                       className="h-full w-full object-cover"
                     />
                   </div>

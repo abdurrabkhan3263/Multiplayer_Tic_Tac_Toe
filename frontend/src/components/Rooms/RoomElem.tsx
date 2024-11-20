@@ -11,7 +11,7 @@ import SearchingForAnotherPlayer from "./SearchingForAnotherPlayer";
 
 interface RoomElemProps {
   name: string;
-  password: string;
+  password?: string;
   type: "private" | "public";
   participants: string;
   userId: string;
@@ -40,21 +40,23 @@ function RoomElem({
     const formData = new FormData(e.currentTarget);
     const enteredPassword = formData.get("password") as string;
 
-    if (!enteredPassword) {
-      toast({
-        title: "Error",
-        description: "Password is required",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      setIsEntering(true);
+    if (password) {
+      if (!enteredPassword) {
+        toast({
+          title: "Error",
+          description: "Password is required",
+          variant: "destructive",
+        });
+        return;
+      }
 
       if (enteredPassword !== password) {
         throw new Error("Invalid password");
       }
+    }
+
+    try {
+      setIsEntering(true);
 
       socket.emit("join_into_custom_room", {
         roomName: name,
@@ -62,6 +64,7 @@ function RoomElem({
         password: enteredPassword,
         id: roomId,
       });
+
       setSearchingToAnotherUser(true);
     } catch (error) {
       toast({

@@ -1,3 +1,21 @@
+export declare type PlayerInfo = {
+  userId: string;
+  socketId: string;
+  symbol: "X" | "O";
+  userName?: string;
+  active: boolean;
+};
+
+export declare type GameState = {
+  board: string[];
+  currentTurn: string;
+  status: "WAITING" | "IN_PROGRESS" | "COMPLETED";
+  player1?: PlayerInfo;
+  player2?: PlayerInfo;
+  roomId: string;
+  createdAt: number;
+};
+
 export declare type User = {
   userId: string;
   userName: string;
@@ -41,11 +59,6 @@ export declare type GameData = {
   turn: string;
 };
 
-export declare type ToggleTurn = {
-  boxId: number;
-  turn: string;
-};
-
 export declare type GameComplete = {
   roomId: string;
 };
@@ -53,6 +66,11 @@ export declare type GameComplete = {
 export declare type PlayerWinMessage = {
   title: string;
   description: string;
+};
+
+export declare type RoomResult = {
+  status: "win" | "draw";
+  userId?: string;
 };
 
 export declare type Player = "X" | "O";
