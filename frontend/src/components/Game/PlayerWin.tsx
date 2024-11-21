@@ -29,7 +29,7 @@ function PlayerWin({
   const navigate = useNavigate();
 
   const handleGoToHome = () => {
-    navigate("/home");
+    navigate("/");
     setOpenDialog({
       isWin: false,
       isDraw: false,
@@ -45,17 +45,17 @@ function PlayerWin({
   useEffect(() => {
     if (open.isWin) {
       setMessage({
-        title: "We have a Winner! 🎉",
+        title: "We have a Winner!",
         description: `Congratulations to Player ${open.playerName} for winning the game!`,
       });
     } else if (open.isDraw) {
       setMessage({
-        title: "Game Over! 🎮",
+        title: "Game Over!",
         description: "The game ended in a draw. Well played!",
       });
     } else if (open.isLose) {
       setMessage({
-        title: "You Lose! 😢",
+        title: "You Lose!",
         description: `${open.playerName} won the game! Better luck next time.`,
       });
     } else {

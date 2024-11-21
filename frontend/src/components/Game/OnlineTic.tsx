@@ -16,7 +16,8 @@ function OnlineTic() {
   const [leftDialog, setLeftDialog] = useState<boolean>(false);
   const navigate = useNavigate();
   const { socket } = useSocket();
-  const { roomId, user, setUser } = useRoomContext();
+  const { user, setUser, music } = useSocket();
+  const { roomId } = useRoomContext();
 
   const handleClick = useCallback(
     ({ index }: { index: number }) => {
@@ -33,7 +34,7 @@ function OnlineTic() {
 
   const handleExit = () => {
     socket.emit("player_left", roomId);
-    navigate("/home");
+    navigate("/");
   };
 
   const handlePlayAgain = () => {
@@ -58,7 +59,7 @@ function OnlineTic() {
   // * Game Start event
 
   useEffect(() => {
-    socket.emit("rejoin_room", { roomId });
+    socket.emit("rejoin_room", { roomId, userId: user?.userId });
   }, [roomId, socket, user]);
 
   // * ALL SOCKET EVENTS HERE
@@ -99,6 +100,7 @@ function OnlineTic() {
         playerName: "",
       });
       setGameData(gameState);
+      setTurn(gameData?.player1?.userId === gameState?.currentTurn ? "X" : "O");
     };
 
     const handleGameStatus = async (RoomResult: RoomResult) => {
@@ -137,14 +139,13 @@ function OnlineTic() {
       socket.off("rejoin_room", handleGameStart);
     };
   }, [gameData, increaseHighScore, roomId, socket, user]);
-
   return (
     <>
       <GameBoard
         handleExitBtn={handleExit}
         handleClick={handleClick}
         board={gameData?.board || []}
-        onlineGameData={{
+        OnlineGameData={{
           playerName: (gameData?.player1?.userId !== user?.userId
             ? gameData?.player1?.userName
             : gameData?.player2?.userName) as string,

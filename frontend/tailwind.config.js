@@ -20,15 +20,25 @@ export default {
       borderColor: {
         "dark-yellow": "var(--dark-yellow)",
       },
+      ringColor: {
+        "dark-yellow": "var(--dark-yellow)",
+        "custom-yellow": "var(--yellow)",
+      },
+      ringOffsetColor: {
+        "dark-yellow": "var(--dark-yellow)",
+        "custom-yellow": "var(--yellow)",
+      },
       boxShadowColor: {
         yellow: "var(--alpha-yellow)",
       },
       textColor: {
+        customYellow: "var(--yellow)",
+        customDarkYellow: "var(--dark-yellow)",
         lightText: "var(--text)",
         darkText: "var(--darkText)",
       },
       fontFamily: {
-        gameFont: ["Press Start 2P", "cursive"],
+        gameFont: ['"Press Start 2P"', "system-ui"],
       },
     },
   },

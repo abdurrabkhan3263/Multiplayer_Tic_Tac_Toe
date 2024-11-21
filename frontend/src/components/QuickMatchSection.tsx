@@ -39,7 +39,7 @@ function QuickMatchSection({ user }: QuickMatchProps) {
   useEffect(() => {
     socket.on("match_found", (roomId) => {
       setMatchSearchingDialog(false);
-      navigate(`/home/play/${roomId}`);
+      navigate(`/play/${roomId}`);
     });
 
     socket.on("emit_joined_into_room", (roomId: string) => {

@@ -1,7 +1,5 @@
 import JoinRoom from "@/components/Rooms/JoinRoom";
 import { Button } from "@/components/ui/button";
-import { Edit, Users, Volume2 } from "lucide-react";
-import { BsLaptop } from "react-icons/bs";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -22,7 +20,7 @@ function Home() {
     if (!user?.userName) {
       setNameDialogOpen(true);
     } else {
-      navigate("/home/play");
+      navigate("/play");
     }
   };
 

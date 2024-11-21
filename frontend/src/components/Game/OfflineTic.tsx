@@ -1,9 +1,10 @@
 import GameBoard from "./GameBoard";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import PlayerWin from "./PlayerWin";
 import { Player, WinStatusType } from "@/types";
 import { INITIAL_WIN_STATUS, WIN_PATTERNS } from "@/lib/constants";
+import { useSocket } from "@/context/SocketProvider";
 
 function OfflineTic() {
   const turnArr = ["X", "O"];
@@ -14,6 +15,7 @@ function OfflineTic() {
   const [winStatus, setWinStatus] = useState<WinStatusType>(INITIAL_WIN_STATUS);
   const counter = useRef(0);
   const navigate = useNavigate();
+  const { music } = useSocket();
 
   const toggleTurn = useCallback(() => {
     setTurn((prevTurn) => (prevTurn === "X" ? "O" : "X"));
@@ -87,7 +89,7 @@ function OfflineTic() {
       isWin: false,
       isLose: false,
     });
-    navigate("/home");
+    navigate("/");
   };
 
   const handlePlayAgain = () => {
@@ -102,10 +104,10 @@ function OfflineTic() {
   return (
     <>
       <GameBoard
-        uiTurn={turn}
         handleExitBtn={handleExit}
         board={board}
         handleClick={handleClick}
+        turn={turn}
       />
       <PlayerWin
         open={winStatus}

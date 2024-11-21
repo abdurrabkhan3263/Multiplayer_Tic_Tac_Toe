@@ -18,7 +18,6 @@ function RoomForm({
   onSubmit,
   roomName,
   setRoomName,
-  roomPassword,
   btnText = "Create Room",
   header = "Custom Room",
 }: RoomFormProps) {
@@ -37,7 +36,6 @@ function RoomForm({
             type="password"
             name="password"
             placeholder="Enter room password"
-            style={{ display: roomPassword ? "block" : "none" }}
           />
           <Button size="full" variant="gameBtn" type="submit">
             {btnText}

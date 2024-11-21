@@ -92,7 +92,7 @@ function RoomElem({
   };
 
   const handleMatchFound = ({ roomId }: { roomId: string }) => {
-    navigate(`/home/play/${roomId}`);
+    navigate(`/play/${roomId}`);
   };
 
   useEffect(() => {

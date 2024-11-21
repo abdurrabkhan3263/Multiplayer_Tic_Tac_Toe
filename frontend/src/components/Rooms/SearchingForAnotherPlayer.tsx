@@ -26,7 +26,7 @@ function SearchingForAnotherPlayer({
     <Dialog open={dialogOpen} onOpenChange={handleDialogOpen}>
       <DialogContent className="text-white sm:max-w-[425px]">
         <div className="flex flex-col space-y-4">
-          <h2 className="text-xl font-bold">Searching for another player...</h2>
+          <h2 className="text-sm font-bold">Searching for another player...</h2>
           <div className="animate-spin">
             <img
               src="/icons/timer-loader.svg"
@@ -34,7 +34,7 @@ function SearchingForAnotherPlayer({
               className="mx-auto h-24 w-24"
             />
           </div>
-          <p className="text-center text-lg">
+          <p className="text-center text-xs">
             Please wait while we find another player to play with you.
           </p>
         </div>

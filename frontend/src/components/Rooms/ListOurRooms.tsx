@@ -44,7 +44,7 @@ function ListOurRooms({ userName, userId }: ListOurRoomsProps) {
         <CardHeader className="px-4 pb-2 pt-4">
           <CardTitle>
             <div className="flex items-center justify-between">
-              <div className="text-lg font-semibold">My Rooms</div>
+              <div className="text-sm font-semibold">My Rooms</div>
               <CreateRoom
                 userId={userId}
                 userName={userName}

@@ -28,7 +28,7 @@ function PlayerLeft({
   const navigate = useNavigate();
 
   const handleGoToHome = () => {
-    navigate("/home");
+    navigate("/");
     setOpenDialog(false);
     resetGame();
     socket.emit("player_left", roomId);
@@ -45,14 +45,15 @@ function PlayerLeft({
     >
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Oops! Player Left 🙁</DialogTitle>
+          <DialogTitle>Oops! Player Left</DialogTitle>
           <DialogDescription>
             The other player has left the game.
           </DialogDescription>
         </DialogHeader>
         <div className="flex justify-end">
           <Button variant={"gameBtn"} onClick={handleGoToHome}>
-            Go Home <Home />
+            Go Home
+            <img src="/icons/home-menu.svg" alt="Home" className="h-6 w-6" />
           </Button>
         </div>
       </DialogContent>

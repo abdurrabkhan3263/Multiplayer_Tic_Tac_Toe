@@ -51,12 +51,7 @@ function UserNameSection({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>
-            <div>
-              Welcome to Tic Tac Toe{" "}
-              <span role="img" aria-label="wave">
-                👋
-              </span>
-            </div>
+            <div>Welcome to Tic Tac Toe</div>
           </DialogTitle>
           <DialogDescription>
             Please enter your name to play the game.

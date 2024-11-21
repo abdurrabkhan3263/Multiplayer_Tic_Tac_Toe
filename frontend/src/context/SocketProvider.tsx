@@ -15,6 +15,8 @@ interface SocketContextType {
   user: User | null;
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
   dbRef: React.MutableRefObject<IDBDatabase | null>;
+  music: boolean;
+  setMusic: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const SocketContext = createContext<SocketContextType>({
@@ -22,6 +24,8 @@ const SocketContext = createContext<SocketContextType>({
   user: null,
   setUser: () => {},
   dbRef: { current: null },
+  music: true,
+  setMusic: () => {},
 });
 export const useSocket = () => useContext(SocketContext);
 
@@ -31,6 +35,7 @@ const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
   const { toast } = useToast();
   const dbRef = useRef<IDBDatabase | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const [music, setMusic] = useState(true);
 
   useEffect(() => {
     (async () => {
@@ -72,8 +77,16 @@ const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
     });
   }, [toast, user]);
 
+  useEffect(() => {
+    if (localStorage.getItem("music")) {
+      setMusic(JSON.parse(localStorage.getItem("music") as string));
+    }
+  }, [setMusic]);
+
   return (
-    <SocketContext.Provider value={{ socket, user, setUser, dbRef }}>
+    <SocketContext.Provider
+      value={{ socket, user, setUser, dbRef, music, setMusic }}
+    >
       {children}
     </SocketContext.Provider>
   );

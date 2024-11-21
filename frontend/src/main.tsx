@@ -10,12 +10,13 @@ import {
 } from "react-router-dom";
 import Play from "./pages/Play.tsx";
 import { Toaster } from "./components/ui/toaster.tsx";
+import Home from "./pages/Home.tsx";
 
 const router = createBrowserRouter(
   createRoutesFromElements(
-    <Route>
-      <Route path="/home" element={<App />} />
-      <Route path="/home/play/:roomId?" element={<Play />} />
+    <Route path="/" element={<App />}>
+      <Route index element={<Home />} />
+      <Route path="/play/:roomId?" element={<Play />} />
     </Route>,
   ),
 );

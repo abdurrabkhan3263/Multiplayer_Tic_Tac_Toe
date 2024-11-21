@@ -8,7 +8,7 @@ function NotAvailable() {
         alt="Not Available"
         className="mx-auto w-20"
       />
-      <div className="p-2 text-center text-xl font-semibold">
+      <div className="p-2 text-center text-sm font-semibold">
         No room available
       </div>
     </>

@@ -205,7 +205,7 @@ export default class SocketController {
         player1: {
           socketId: socket.id,
           userId: user.userId,
-          symbol: playerSymbol[Math.floor(Math.random() * 2)] as "X" | "O",
+          symbol: "X",
           userName: user.userName,
           active: true,
         },
@@ -343,7 +343,7 @@ export default class SocketController {
             gameData.player2 = {
               socketId: socket.id,
               userId: user.userId,
-              symbol: gameData.player1?.symbol === "X" ? "O" : "X",
+              symbol: "O",
               userName: user?.userName,
               active: true,
             };
@@ -356,10 +356,7 @@ export default class SocketController {
                 ? gameData.player1.userId
                 : gameData.player2.userId;
 
-            await redis.hSet(roomId, {
-              ...findRoom,
-              playerCount: 2,
-            });
+            await redis.hIncrBy(roomId, "playerCount", 1);
 
             this.userToRoomMapping.set(user?.userId, roomId);
 
@@ -405,12 +402,11 @@ export default class SocketController {
         gameState.player2 = {
           socketId: socket.id,
           userId: user.userId,
-          symbol: gameState.player1?.symbol === "X" ? "O" : "X",
+          symbol: "O",
           userName: user.userName,
           active: true,
         };
         gameState.status = "IN_PROGRESS";
-
         gameState.currentTurn =
           Math.random() < 0.5
             ? gameState.player1?.userId!
@@ -484,6 +480,7 @@ export default class SocketController {
   private handler_rejoinIntoRoom(socket: Socket) {
     this.on(socket, "rejoin_room", async ({ roomId, userId }: GameStart) => {
       const gameState = this.gameRooms.get(roomId);
+      console.log({ roomId, userId });
 
       if (!gameState) {
         this.emit_gameError({
@@ -529,10 +526,6 @@ export default class SocketController {
 
       gameState.board = Array(9).fill("");
       gameState.status = "IN_PROGRESS";
-      gameState.currentTurn =
-        Math.random() < 0.5
-          ? gameState.player1?.userId!
-          : gameState.player2?.userId!;
 
       this.emit_playAgain(roomId, gameState);
     });

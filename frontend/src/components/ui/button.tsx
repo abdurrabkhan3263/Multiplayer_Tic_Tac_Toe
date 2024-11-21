@@ -25,17 +25,15 @@ const buttonVariants = cva(
         gameBtn:
           "bg-custom-yellow cursor-pointer rounded-lg border-b-[4px] border-[#eead14] px-6 py-2 text-white transition-all hover:-translate-y-[1px] hover:border-b-[6px] hover:brightness-110 active:translate-y-[2px] active:border-b-[2px] active:brightness-90",
         leaveBtn:
-          "bg-red-500 text-neutral-50 hover:bg-red-600 dark:bg-red-400 dark:text-neutral-900 dark:hover:bg-red-500",
-        coolBtn:
-          "bg-green-500 text-neutral-50 hover:bg-green-600 dark:bg-green-400 dark:text-neutral-900 dark:hover:bg-green-500",
+          "bg-red-500 cursor-pointer rounded-lg border-b-[4px] border-red-700 px-6 py-2 text-white transition-all hover:-translate-y-[1px] hover:border-b-[6px] hover:brightness-110 active:translate-y-[2px] active:border-b-[2px] active:brightness-90",
       },
       size: {
-        default: "h-10 px-4 py-2",
+        default: "h-10 text-xs px-4 py-2",
         roundedBtn: "h-14 w-14 p-2 rounded-full",
         sm: "h-9 rounded-md px-3",
         lg: "h-11 rounded-md px-8",
         icon: "h-10 w-10",
-        full: "h-11 w-full py-2",
+        full: "h-11 text-xs w-full py-2",
       },
     },
     defaultVariants: {
