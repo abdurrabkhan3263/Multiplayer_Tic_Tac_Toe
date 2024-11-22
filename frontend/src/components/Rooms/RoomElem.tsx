@@ -1,20 +1,21 @@
 import React, { useEffect } from "react";
-import { LockKeyhole, Users } from "lucide-react";
+import { Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import RoomForm from "./RoomForm";
 import { useToast } from "@/hooks/use-toast";
 import { io } from "socket.io-client";
 import { useNavigate } from "react-router-dom";
-import { GameError } from "@/types";
+import { GameError, User } from "@/types";
 import SearchingForAnotherPlayer from "./SearchingForAnotherPlayer";
+import { ENTER_BTN_ROOM_TEXT, ENTER_HEADER_TEXT } from "@/lib/constants";
 
 interface RoomElemProps {
   name: string;
   password?: string;
   type: "private" | "public";
   participants: string;
-  userId: string;
+  user: User;
   roomId: string;
 }
 
@@ -23,7 +24,7 @@ function RoomElem({
   password,
   type,
   participants = "0",
-  userId,
+  user,
   roomId,
 }: RoomElemProps) {
   const [isEntering, setIsEntering] = React.useState<boolean>(false);
@@ -60,7 +61,7 @@ function RoomElem({
 
       socket.emit("join_into_custom_room", {
         roomName: name,
-        userId,
+        user,
         password: enteredPassword,
         id: roomId,
       });
@@ -82,23 +83,29 @@ function RoomElem({
 
   // Listener functions
 
-  const handleGameError = (error: GameError) => {
-    setSearchingToAnotherUser(false);
-    toast({
-      title: "Game Error",
-      description: error.message || "An error occurred",
-      variant: "destructive",
-    });
-  };
+  const handleGameError = React.useCallback(
+    (error: GameError) => {
+      setSearchingToAnotherUser(false);
+      toast({
+        title: "Game Error",
+        description: error.message || "An error occurred",
+        variant: "destructive",
+      });
+    },
+    [toast],
+  );
 
-  const handleMatchFound = ({ roomId }: { roomId: string }) => {
-    navigate(`/play/${roomId}`);
-  };
+  const handleMatchFound = React.useCallback(
+    ({ roomId }: { roomId: string }) => {
+      navigate(`/play/${roomId}`);
+    },
+    [navigate],
+  );
 
   useEffect(() => {
     socket.on("game_error", handleGameError);
     socket.on("match_found", handleMatchFound);
-  }, [navigate, socket, toast]);
+  }, [handleGameError, handleMatchFound, socket]);
 
   return (
     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -108,15 +115,15 @@ function RoomElem({
             <div className="flex items-center space-x-4">
               <div className="flex-shrink-0">
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white">
-                  <LockKeyhole className="h-4 w-4 text-purple-500" />
+                  <img src={`/icons/${type}.svg`} alt="room" className="h-6" />
                 </div>
               </div>
               <div className="flex-grow">
                 <h3 className="text-balance text-sm font-bold text-white">
                   {name}
                 </h3>
-                <p className="text-sm text-purple-100">
-                  {type === "public" ? "Private Room" : "Public Room"}
+                <p className="text-xs text-purple-100">
+                  {type === "public" ? "Public Room" : "Private Room"}
                 </p>
               </div>
             </div>
@@ -135,8 +142,9 @@ function RoomElem({
           handleRoomSubmit={handleEnterRoom}
           setRoomName={setRoomName}
           onSubmit={isEntering}
-          btnText="Enter Room"
-          header="Enter to the custom room"
+          btnText={ENTER_BTN_ROOM_TEXT}
+          header={ENTER_HEADER_TEXT}
+          roomPassword={password}
         />
         <SearchingForAnotherPlayer
           dialogOpen={searchingToAnotherUser}

@@ -2,6 +2,7 @@ import React from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
+import { ENTER_BTN_ROOM_TEXT } from "@/lib/constants";
 
 interface RoomFormProps {
   handleRoomSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
@@ -18,8 +19,9 @@ function RoomForm({
   onSubmit,
   roomName,
   setRoomName,
-  btnText = "Create Room",
-  header = "Custom Room",
+  btnText,
+  header,
+  roomPassword,
 }: RoomFormProps) {
   return (
     <>
@@ -32,11 +34,14 @@ function RoomForm({
             value={roomName}
             onChange={(e) => setRoomName(e.target.value)}
           />
-          <Input
-            type="password"
-            name="password"
-            placeholder="Enter room password"
-          />
+          {((roomPassword && btnText === ENTER_BTN_ROOM_TEXT) ||
+            btnText === "Create Room") && (
+            <Input
+              type="password"
+              name="password"
+              placeholder="Enter room password"
+            />
+          )}
           <Button size="full" variant="gameBtn" type="submit">
             {btnText}
             {onSubmit ? (

@@ -145,6 +145,8 @@ export default class SocketController {
       gameData.player2 = undefined;
     }
 
+    // TODO : FIX THE BUG HERE
+
     if (gameData?.player1 === undefined && gameData?.player2 === undefined) {
       this.gameRooms.delete(room);
       await redis.del(room);
@@ -192,8 +194,8 @@ export default class SocketController {
     };
   }
 
-  private async createRoom(socket: Socket, user: User) {
-    const roomId = `room:${uuid()}`;
+  private async createRoom(socket: Socket, user: User, cRoomId?: string) {
+    const roomId = cRoomId || `room:${uuid()}`;
 
     try {
       const initialState: GameState = {
@@ -215,14 +217,21 @@ export default class SocketController {
       this.gameRooms.set(roomId, initialState);
       this.userToRoomMapping.set(user.userId, roomId);
 
-      await redis.hSet(roomId, {
-        roomId,
-        roomName: "Random_room",
-        type: "public",
-        status: "WAITING",
-        createdAt: Date.now().toString(),
-        playerCount: 1,
-      });
+      console.log("Room created", roomId);
+      console.log("GameRooms", this.gameRooms.get(roomId));
+
+      if (cRoomId) {
+        await redis.hIncrBy(roomId, "playerCount", 1);
+      } else {
+        await redis.hSet(roomId, {
+          roomId,
+          roomName: "Random_room",
+          type: "public",
+          status: "WAITING",
+          createdAt: Date.now().toString(),
+          playerCount: 1,
+        });
+      }
 
       await redis.expire(roomId, 60 * 10);
 
@@ -338,7 +347,7 @@ export default class SocketController {
           }
 
           if (!gameData) {
-            this.createRoom(socket, user);
+            this.createRoom(socket, user, roomId);
           } else {
             gameData.player2 = {
               socketId: socket.id,
@@ -480,8 +489,6 @@ export default class SocketController {
   private handler_rejoinIntoRoom(socket: Socket) {
     this.on(socket, "rejoin_room", async ({ roomId, userId }: GameStart) => {
       const gameState = this.gameRooms.get(roomId);
-      console.log({ roomId, userId });
-
       if (!gameState) {
         this.emit_gameError({
           socket,

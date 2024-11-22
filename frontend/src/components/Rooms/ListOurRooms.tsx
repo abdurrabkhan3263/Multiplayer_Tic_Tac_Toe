@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Room as RoomType } from "@/types";
+import { Room as RoomType, User } from "@/types";
 import RoomElem from "./RoomElem";
 import { getMyRoom } from "@/lib/action/room.action";
 import { AxiosError } from "axios";
@@ -10,16 +10,16 @@ import NotAvailable from "./NotAvailable";
 
 interface ListOurRoomsProps {
   userName: string;
-  userId: string;
+  user: User;
 }
 
-function ListOurRooms({ userName, userId }: ListOurRoomsProps) {
+function ListOurRooms({ userName, user }: ListOurRoomsProps) {
   const [listRoom, setListRoom] = React.useState<RoomType[]>([]);
 
   useEffect(() => {
     (async () => {
       try {
-        const response = await getMyRoom({ userId });
+        const response = await getMyRoom({ userId: user?.userId });
 
         if (response?.status !== "success") {
           throw new Error(response?.message);
@@ -36,7 +36,7 @@ function ListOurRooms({ userName, userId }: ListOurRoomsProps) {
         console.error(errorMessage);
       }
     })();
-  }, []);
+  }, [user]);
 
   return (
     <ScrollArea className={`${listRoom.length > 0 ? "h-[200px]" : ""}`}>
@@ -46,7 +46,7 @@ function ListOurRooms({ userName, userId }: ListOurRoomsProps) {
             <div className="flex items-center justify-between">
               <div className="text-sm font-semibold">My Rooms</div>
               <CreateRoom
-                userId={userId}
+                userId={user?.userId}
                 userName={userName}
                 setListRoom={setListRoom}
               />
@@ -57,25 +57,15 @@ function ListOurRooms({ userName, userId }: ListOurRoomsProps) {
           <div className="flex flex-col gap-2">
             {listRoom.length > 0 ? (
               listRoom.map(
-                (
-                  {
-                    roomId,
-                    roomName,
-                    password,
-                    clientCount,
-                    activeUsers,
-                    type,
-                  },
-                  index,
-                ) => (
+                ({ roomId, roomName, password, clientCount, type }, index) => (
                   <RoomElem
                     key={index}
                     roomId={roomId}
                     name={roomName}
                     password={password}
-                    userId={userId}
+                    user={user}
                     participants={clientCount}
-                    type="private"
+                    type={type}
                   />
                 ),
               )

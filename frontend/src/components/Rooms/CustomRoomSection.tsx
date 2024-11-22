@@ -16,7 +16,7 @@ function CustomRoomSection({ user }: CustomRoomSectionProps) {
           <TabsTrigger value="allRooms">All Rooms</TabsTrigger>
         </TabsList>
         <TabsContent value="activeRoom" className="my-3">
-          <MyRoom userId={user.userId} userName={user.userName} />
+          <MyRoom user={user} userName={user.userName} />
         </TabsContent>
         <TabsContent value="allRooms" className="my-3">
           <AllRoom user={user} />

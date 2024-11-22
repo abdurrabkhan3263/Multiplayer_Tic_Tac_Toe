@@ -22,3 +22,9 @@ export const WIN_PATTERNS = [
   [0, 4, 8],
   [2, 4, 6],
 ] as const;
+
+export const ENTER_BTN_ROOM_TEXT = "Enter Room";
+export const ENTER_HEADER_TEXT = "Enter to the custom room";
+
+export const CREATE_BTN_ROOM_TEXT = "Create Room";
+export const CREATE_HEADER_TEXT = "Create a new room";

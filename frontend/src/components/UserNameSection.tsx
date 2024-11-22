@@ -30,6 +30,7 @@ function UserNameSection({
   setNameDialogOpen,
 }: UserNameSectionProps) {
   const [inputUserName, setInputUserName] = useState("");
+  const [inputError, setInputError] = useState(false);
 
   const handleSpace = useCallback((elem: string) => {
     return elem.replace(/\s/g, "_");
@@ -37,6 +38,14 @@ function UserNameSection({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target;
+
+    if (value && value.length > 6) {
+      setInputError(true);
+      return;
+    } else if (value.length <= 6 && inputError) {
+      setInputError(false);
+    }
+
     const name = handleSpace(value);
     setInputUserName(name);
   };
@@ -65,6 +74,11 @@ function UserNameSection({
               value={inputUserName}
               onChange={handleInputChange}
             />
+            {inputError && (
+              <span className="text-sm text-white">
+                Name should not exceed 6 characters
+              </span>
+            )}
             <Button size="full" variant="gameBtn" type="submit">
               Play{" "}
               {IsAddingUser && <Loader2 size={24} className="animate-spin" />}

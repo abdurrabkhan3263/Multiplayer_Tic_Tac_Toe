@@ -146,14 +146,14 @@ function OnlineTic() {
         handleClick={handleClick}
         board={gameData?.board || []}
         OnlineGameData={{
-          playerName: (gameData?.player1?.userId !== user?.userId
+          opponentName: (gameData?.player1?.userId !== user?.userId
             ? gameData?.player1?.userName
             : gameData?.player2?.userName) as string,
-          currentSymbol: turn as "X" | "O",
-          symbol: (gameData?.player1?.userId === user?.userId
+          ourSymbol: (gameData?.player1?.userId === user?.userId
             ? gameData?.player1?.symbol
             : gameData?.player2?.symbol) as "X" | "O",
         }}
+        currentTurn={turn as "X" | "O"}
       />
       <PlayerLeft
         roomId={roomId}

@@ -1,18 +1,17 @@
 import ExitGame from "@/components/Game/ExitGame";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { cn } from "@/lib/utils";
 import Score from "../Score";
 import MusicButton from "../MusicButton";
-import { useEffect, useState } from "react";
+import { GameHeader } from "../GameHeader";
+import { useEffect } from "react";
 
 interface GameBoardProps {
   OnlineGameData?: {
-    playerName: string;
-    currentSymbol: "X" | "O";
-    symbol: "X" | "O";
+    opponentName: string;
+    ourSymbol: "X" | "O";
   };
-  turn?: "X" | "O";
+  currentTurn: "X" | "O";
   handleExitBtn: () => void;
   board: string[];
   handleClick: ({ index }: { index: number }) => void;
@@ -23,19 +22,8 @@ function GameBoard({
   handleExitBtn,
   board,
   handleClick,
-  turn,
+  currentTurn,
 }: GameBoardProps) {
-  const [ourTurn, setOurTurn] = useState(false);
-
-  useEffect(() => {
-    if (!OnlineGameData) return;
-
-    if (OnlineGameData.currentSymbol === OnlineGameData.symbol) {
-      setOurTurn(true);
-    } else {
-      setOurTurn(false);
-    }
-  }, [OnlineGameData]);
   return (
     <div className="home_menu">
       <div className="home_menu_card">
@@ -52,42 +40,11 @@ function GameBoard({
               </div>
               <MusicButton />
             </div>
-            <div className="my-2.5 w-full">
-              <div className="relative flex items-center justify-center">
-                <div
-                  className={cn(
-                    ((OnlineGameData && ourTurn) || (turn && turn === "X")) &&
-                      "border-2",
-                    "mx-2 h-12 w-12 overflow-hidden",
-                  )}
-                >
-                  <span>{OnlineGameData && "You"}</span>
-                  <img
-                    src={`/icons/sm${OnlineGameData?.symbol || "X"}.svg`}
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-                <span className="mx-2 h-11 w-11 overflow-hidden">
-                  <img
-                    src="/icons/vs.svg"
-                    className="h-full w-full object-contain"
-                  />
-                </span>
-                <div
-                  className={cn(
-                    ((OnlineGameData && !ourTurn) || (turn && turn === "O")) &&
-                      "border-2",
-                    "mx-2 h-12 w-12 overflow-hidden",
-                  )}
-                >
-                  <span>{OnlineGameData?.playerName}</span>
-                  <img
-                    src={`/icons/sm${OnlineGameData ? (OnlineGameData?.symbol === "X" ? "O" : "X") : "O"}.svg`}
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-              </div>
-            </div>
+            <GameHeader
+              opponentName={OnlineGameData?.opponentName || ""}
+              mySymbol={OnlineGameData?.ourSymbol || "X"}
+              currentTurn={currentTurn}
+            />
           </div>
           <Separator className="my-2.5 bg-bg" />
           <div className="flex w-full justify-center">

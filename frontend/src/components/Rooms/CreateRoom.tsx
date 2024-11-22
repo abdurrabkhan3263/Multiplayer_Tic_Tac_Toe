@@ -6,6 +6,7 @@ import { roomObj } from "@/types/zod";
 import { useToast } from "@/hooks/use-toast";
 import { addNewRoom } from "@/lib/action/room.action";
 import { Room } from "@/types";
+import { CREATE_BTN_ROOM_TEXT, CREATE_HEADER_TEXT } from "@/lib/constants";
 
 function CreateRoom({
   userName,
@@ -90,8 +91,8 @@ function CreateRoom({
           handleRoomSubmit={handleCreateRoom}
           setRoomName={setRoomName}
           onSubmit={isEntering}
-          btnText="Create Room"
-          header="Create a new room"
+          btnText={CREATE_BTN_ROOM_TEXT}
+          header={CREATE_HEADER_TEXT}
         />
       </DialogContent>
     </Dialog>

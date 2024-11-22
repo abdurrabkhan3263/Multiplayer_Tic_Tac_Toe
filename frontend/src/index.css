@@ -50,7 +50,7 @@ img {
 }
 
 .home_menu_card {
-  @apply relative flex h-screen w-screen flex-col rounded-3xl border bg-white/10 bg-contain bg-center bg-no-repeat p-5 shadow-xl shadow-blue-800/30 filter backdrop-blur-md sm:h-[700px] sm:w-[600px] md:bg-cover;
+  @apply relative flex h-screen w-screen flex-col rounded-3xl border bg-white/10 bg-contain bg-center bg-no-repeat p-5 shadow-xl shadow-blue-800/30 filter backdrop-blur-md sm:h-[735px] sm:w-[600px] md:bg-cover;
 }
 
 .toggle_item_active {

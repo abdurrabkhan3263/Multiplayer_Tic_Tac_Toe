@@ -20,6 +20,7 @@ export default {
       borderColor: {
         "dark-yellow": "var(--dark-yellow)",
       },
+
       ringColor: {
         "dark-yellow": "var(--dark-yellow)",
         "custom-yellow": "var(--yellow)",
@@ -35,6 +36,7 @@ export default {
         customYellow: "var(--yellow)",
         customDarkYellow: "var(--dark-yellow)",
         lightText: "var(--text)",
+        customBlue: "var(--blue)",
         darkText: "var(--darkText)",
       },
       fontFamily: {

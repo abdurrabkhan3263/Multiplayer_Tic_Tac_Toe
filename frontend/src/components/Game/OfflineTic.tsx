@@ -107,7 +107,7 @@ function OfflineTic() {
         handleExitBtn={handleExit}
         board={board}
         handleClick={handleClick}
-        turn={turn}
+        currentTurn={turn}
       />
       <PlayerWin
         open={winStatus}
