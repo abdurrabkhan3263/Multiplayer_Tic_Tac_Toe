@@ -10,32 +10,34 @@ import NotAvailable from "./NotAvailable";
 
 interface MyRoomProps {
   user: User;
+  listRoom: Roomtype[];
+  setListRoom: React.Dispatch<React.SetStateAction<Roomtype[]>>;
 }
 
-function ListAllRooms({ user }: MyRoomProps) {
-  const [listRoom, setListRoom] = React.useState<Roomtype[]>([]);
+function ListAllRooms({ user, listRoom, setListRoom }: MyRoomProps) {
+  // const [listRoom, setListRoom] = React.useState<Roomtype[]>([]);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const response = await getAllRoom();
+  // useEffect(() => {
+  //   (async () => {
+  //     try {
+  //       const response = await getAllRoom();
 
-        if (response?.status !== "success") {
-          throw new Error(response?.message);
-        }
+  //       if (response?.status !== "success") {
+  //         throw new Error(response?.message);
+  //       }
 
-        setListRoom(response.data);
-      } catch (err) {
-        const errorMessage =
-          err instanceof Error
-            ? err.message
-            : err instanceof AxiosError
-              ? err.response?.data.message
-              : "An error occurred";
-        console.error(errorMessage);
-      }
-    })();
-  }, []);
+  //       setListRoom(response.data);
+  //     } catch (err) {
+  //       const errorMessage =
+  //         err instanceof Error
+  //           ? err.message
+  //           : err instanceof AxiosError
+  //             ? err.response?.data.message
+  //             : "An error occurred";
+  //       console.error(errorMessage);
+  //     }
+  //   })();
+  // }, []);
 
   return (
     <ScrollArea className={`${listRoom.length > 0 ? "h-[200px]" : ""} w-full`}>

@@ -19,6 +19,7 @@ function SearchingForAnotherPlayer({
     console.log(roomId, dialogOpen);
     setDialogOpen((prev) => !prev);
     if (dialogOpen && roomId) {
+      console.log({ roomId });
       socket.emit("player_left", roomId);
     }
   };

@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Room as RoomType, User } from "@/types";
@@ -11,32 +11,39 @@ import NotAvailable from "./NotAvailable";
 interface ListOurRoomsProps {
   userName: string;
   user: User;
+  listOurRoom: RoomType[];
+  setListOurRoom: React.Dispatch<React.SetStateAction<RoomType[]>>;
 }
 
-function ListOurRooms({ userName, user }: ListOurRoomsProps) {
-  const [listRoom, setListRoom] = React.useState<RoomType[]>([]);
+function ListOurRooms({
+  userName,
+  user,
+  listOurRoom: listRoom,
+  setListOurRoom: setListRoom,
+}: ListOurRoomsProps) {
+  // const [listRoom, setListRoom] = React.useState<RoomType[]>([]);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const response = await getMyRoom({ userId: user?.userId });
+  // useEffect(() => {
+  //   (async () => {
+  //     try {
+  //       const response = await getMyRoom({ userId: user?.userId });
 
-        if (response?.status !== "success") {
-          throw new Error(response?.message);
-        }
-        setListRoom(response.data);
-      } catch (err) {
-        const errorMessage =
-          err instanceof Error
-            ? err.message
-            : err instanceof AxiosError
-              ? err.response?.data.message
-              : "An error occurred";
+  //       if (response?.status !== "success") {
+  //         throw new Error(response?.message);
+  //       }
+  //       setListRoom(response.data);
+  //     } catch (err) {
+  //       const errorMessage =
+  //         err instanceof Error
+  //           ? err.message
+  //           : err instanceof AxiosError
+  //             ? err.response?.data.message
+  //             : "An error occurred";
 
-        console.error(errorMessage);
-      }
-    })();
-  }, [user]);
+  //       console.error(errorMessage);
+  //     }
+  //   })();
+  // }, [user]);
 
   return (
     <ScrollArea className={`${listRoom.length > 0 ? "h-[200px]" : ""}`}>

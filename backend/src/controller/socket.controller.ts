@@ -139,6 +139,14 @@ export default class SocketController {
     }
     this.socketToUserMapping.delete(socket.id);
 
+    // console.log({ SOCKETID: socket.id, ROOMID: room, GAMEDATA: gameData });
+    console.log({
+      SOCKETID: socket.id,
+      ROOMID: room,
+      GAMESOCKETID: gameData?.player1?.socketId,
+      GAMESOCKETID2: gameData?.player2?.socketId,
+    });
+
     if (gameData?.player1?.socketId === socket.id) {
       gameData.player1 = undefined;
     } else if (gameData?.player2?.socketId === socket.id) {
@@ -197,6 +205,12 @@ export default class SocketController {
   private async createRoom(socket: Socket, user: User, cRoomId?: string) {
     const roomId = cRoomId || `room:${uuid()}`;
 
+    console.log("Room created", {
+      // roomId,
+      SOCKETID: socket.id,
+      // USERID: user.userId,
+    });
+
     try {
       const initialState: GameState = {
         board: Array(9).fill(""),
@@ -217,7 +231,6 @@ export default class SocketController {
       this.gameRooms.set(roomId, initialState);
       this.userToRoomMapping.set(user.userId, roomId);
 
-      console.log("Room created", roomId);
       console.log("GameRooms", this.gameRooms.get(roomId));
 
       if (cRoomId) {
@@ -325,6 +338,8 @@ export default class SocketController {
             });
             return;
           }
+
+          console.log({ SOCKETID: socket.id });
 
           const findRoom = await this.getRoomFromRedis({ roomId });
 
@@ -513,7 +528,9 @@ export default class SocketController {
   }
 
   private handler_playerLeft(socket: Socket) {
+    console.log("Socket id1, ", socket.id);
     this.on(socket, "player_left", (roomId) => {
+      console.log("Socket id2, ", socket.id);
       this.leaveRoom(socket, roomId);
     });
   }

@@ -8,6 +8,9 @@ interface CustomRoomSectionProps {
 }
 
 function CustomRoomSection({ user }: CustomRoomSectionProps) {
+  const [listRoom, setListRoom] = React.useState([]);
+  const [listOurRoom, setListOurRoom] = React.useState([]);
+
   return (
     <TabsContent value="custom_room" className="mt-5">
       <Tabs defaultValue="activeRoom" className="w-full">
@@ -16,10 +19,15 @@ function CustomRoomSection({ user }: CustomRoomSectionProps) {
           <TabsTrigger value="allRooms">All Rooms</TabsTrigger>
         </TabsList>
         <TabsContent value="activeRoom" className="my-3">
-          <MyRoom user={user} userName={user.userName} />
+          <MyRoom
+            user={user}
+            userName={user.userName}
+            listOurRoom={listOurRoom}
+            setListOurRoom={setListOurRoom}
+          />
         </TabsContent>
         <TabsContent value="allRooms" className="my-3">
-          <AllRoom user={user} />
+          <AllRoom user={user} listRoom={listRoom} setListRoom={setListRoom} />
         </TabsContent>
       </Tabs>
     </TabsContent>
