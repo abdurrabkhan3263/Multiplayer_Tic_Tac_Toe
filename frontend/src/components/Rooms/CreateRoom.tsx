@@ -11,11 +11,13 @@ import { CREATE_BTN_ROOM_TEXT, CREATE_HEADER_TEXT } from "@/lib/constants";
 function CreateRoom({
   userName,
   userId,
-  setListRoom,
+  setListOurRooms,
+  setListAllRooms,
 }: {
   userName: string;
   userId: string;
-  setListRoom: React.Dispatch<React.SetStateAction<Room[]>>;
+  setListOurRooms: React.Dispatch<React.SetStateAction<Room[]>>;
+  setListAllRooms: React.Dispatch<React.SetStateAction<Room[]>>;
 }) {
   const [isEntering, setOnSubmit] = React.useState(false);
   const [roomName, setRoomName] = React.useState("");
@@ -53,7 +55,8 @@ function CreateRoom({
       });
 
       if (response.status === "success") {
-        setListRoom((prev) => [...prev, response.data]);
+        setListOurRooms((prev) => [...prev, response.data]);
+        setListAllRooms((prev) => [...prev, response.data]);
         toast({
           title: "Success",
           description: "Room created successfully",

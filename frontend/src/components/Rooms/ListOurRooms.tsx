@@ -1,10 +1,8 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Room as RoomType, User } from "@/types";
+import { Room, Room as RoomType, User } from "@/types";
 import RoomElem from "./RoomElem";
-import { getMyRoom } from "@/lib/action/room.action";
-import { AxiosError } from "axios";
 import CreateRoom from "./CreateRoom";
 import NotAvailable from "./NotAvailable";
 
@@ -12,39 +10,17 @@ interface ListOurRoomsProps {
   userName: string;
   user: User;
   listOurRoom: RoomType[];
-  setListOurRoom: React.Dispatch<React.SetStateAction<RoomType[]>>;
+  setListAllRooms: React.Dispatch<React.SetStateAction<Room[]>>;
+  setListOurRooms: React.Dispatch<React.SetStateAction<Room[]>>;
 }
 
 function ListOurRooms({
   userName,
   user,
   listOurRoom: listRoom,
-  setListOurRoom: setListRoom,
+  setListAllRooms,
+  setListOurRooms,
 }: ListOurRoomsProps) {
-  // const [listRoom, setListRoom] = React.useState<RoomType[]>([]);
-
-  // useEffect(() => {
-  //   (async () => {
-  //     try {
-  //       const response = await getMyRoom({ userId: user?.userId });
-
-  //       if (response?.status !== "success") {
-  //         throw new Error(response?.message);
-  //       }
-  //       setListRoom(response.data);
-  //     } catch (err) {
-  //       const errorMessage =
-  //         err instanceof Error
-  //           ? err.message
-  //           : err instanceof AxiosError
-  //             ? err.response?.data.message
-  //             : "An error occurred";
-
-  //       console.error(errorMessage);
-  //     }
-  //   })();
-  // }, [user]);
-
   return (
     <ScrollArea className={`${listRoom.length > 0 ? "h-[200px]" : ""}`}>
       <Card className="w-full bg-custom-blue text-white">
@@ -55,7 +31,8 @@ function ListOurRooms({
               <CreateRoom
                 userId={user?.userId}
                 userName={userName}
-                setListRoom={setListRoom}
+                setListAllRooms={setListAllRooms}
+                setListOurRooms={setListOurRooms}
               />
             </div>
           </CardTitle>

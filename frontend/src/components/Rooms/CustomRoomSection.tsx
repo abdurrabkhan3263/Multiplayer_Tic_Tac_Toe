@@ -1,15 +1,45 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User } from "@/types";
+import { Room, User } from "@/types";
 import AllRoom from "./ListAllRooms";
 import MyRoom from "./ListOurRooms";
+import { useEffect, useState } from "react";
+import { getAllRoom, getMyRoom } from "@/lib/action/room.action";
+import { AxiosError } from "axios";
 
 interface CustomRoomSectionProps {
   user: User;
 }
 
 function CustomRoomSection({ user }: CustomRoomSectionProps) {
-  const [listRoom, setListRoom] = React.useState([]);
-  const [listOurRoom, setListOurRoom] = React.useState([]);
+  const [listAllRooms, setListAllRooms] = useState<Room[]>([]);
+  const [listOurRooms, setListOurRooms] = useState<Room[]>([]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const myRoomResponse = await getMyRoom({ userId: user?.userId });
+
+        if (myRoomResponse?.status !== "success") {
+          throw new Error(myRoomResponse?.message);
+        }
+        setListOurRooms(myRoomResponse.data);
+
+        const allRoomResponse = await getAllRoom();
+        if (allRoomResponse?.status !== "success") {
+          throw new Error(allRoomResponse?.message);
+        }
+        setListRooms(allRoomResponse.data);
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error
+            ? err.message
+            : err instanceof AxiosError
+              ? err.response?.data.message
+              : "An error occurred";
+        console.error(errorMessage);
+      }
+    })();
+  }, [user?.userId]);
 
   return (
     <TabsContent value="custom_room" className="mt-5">
@@ -22,12 +52,18 @@ function CustomRoomSection({ user }: CustomRoomSectionProps) {
           <MyRoom
             user={user}
             userName={user.userName}
-            listOurRoom={listOurRoom}
-            setListOurRoom={setListOurRoom}
+            listOurRoom={listOurRooms}
+            setListAllRooms={setListAllRooms}
+            setListOurRooms={setListOurRooms}
           />
         </TabsContent>
         <TabsContent value="allRooms" className="my-3">
-          <AllRoom user={user} listRoom={listRoom} setListRoom={setListRoom} />
+          <AllRoom
+            user={user}
+            listRoom={listAllRooms}
+            setListAllRooms={setListAllRooms}
+            setListOurRooms={setListOurRooms}
+          />
         </TabsContent>
       </Tabs>
     </TabsContent>
