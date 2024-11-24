@@ -5,6 +5,7 @@ import Score from "../Score";
 import MusicButton from "../MusicButton";
 import { GameHeader } from "../GameHeader";
 import { useEffect } from "react";
+import { cn } from "@/lib/utils";
 
 interface GameBoardProps {
   OnlineGameData?: {
@@ -51,7 +52,7 @@ function GameBoard({
             <div
               className="grid aspect-square w-full max-w-lg grid-cols-3 gap-2 bg-contain bg-center bg-no-repeat"
               style={{
-                backgroundImage: "url(/images/bar.png)",
+                backgroundImage: "url(/images/Bar.png)",
               }}
             >
               {board.map((item, index) => (
@@ -63,7 +64,12 @@ function GameBoard({
                 >
                   {item && (
                     <div className="select-none">
-                      <div className="w-h-20 mx-2 h-20 overflow-hidden">
+                      <div
+                        className={cn(
+                          item ? "toggle_item_active" : "toggle_item_inactive",
+                          "w-h-20 mx-2 h-20 overflow-hidden",
+                        )}
+                      >
                         <img
                           src={`/icons/${item}.svg`}
                           className="h-full w-full object-cover"

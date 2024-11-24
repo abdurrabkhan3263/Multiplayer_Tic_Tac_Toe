@@ -9,6 +9,8 @@ function MusicButton() {
     localStorage.setItem("music", JSON.stringify(!music));
   };
 
+  if (music === undefined) <></>;
+
   return (
     <Button
       variant={"roundedBtn"}

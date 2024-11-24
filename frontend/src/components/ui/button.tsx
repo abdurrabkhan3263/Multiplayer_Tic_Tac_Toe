@@ -26,6 +26,8 @@ const buttonVariants = cva(
           "bg-custom-yellow cursor-pointer rounded-lg border-b-[4px] border-[#eead14] px-6 py-2 text-white transition-all hover:-translate-y-[1px] hover:border-b-[6px] hover:brightness-110 active:translate-y-[2px] active:border-b-[2px] active:brightness-90",
         leaveBtn:
           "bg-red-500 cursor-pointer rounded-lg border-b-[4px] border-red-700 px-6 py-2 text-white transition-all hover:-translate-y-[1px] hover:border-b-[6px] hover:brightness-110 active:translate-y-[2px] active:border-b-[2px] active:brightness-90",
+        noBgOutline:
+          "border border-neutral-200 hover:bg-neutral-100 hover:text-neutral-900 dark:border-neutral-800 dark:hover:bg-neutral-800 dark:hover:text-neutral-50",
       },
       size: {
         default: "h-10 text-xs px-4 py-2",
@@ -34,6 +36,7 @@ const buttonVariants = cva(
         lg: "h-11 rounded-md px-8",
         icon: "h-10 w-10",
         full: "h-11 text-xs w-full py-2",
+        smallRoundedBtn: "h-11 w-11 p-2 rounded-full",
       },
     },
     defaultVariants: {
