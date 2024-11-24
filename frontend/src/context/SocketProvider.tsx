@@ -54,28 +54,38 @@ const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [toast]);
 
   useEffect(() => {
-    if (user?.userId) {
+    if (!socket.connected && user?.userId) {
       socket.connect();
     }
 
-    socket.on("connect", () => {
+    const handleConnect = () => {
       console.log("Connected to socket server");
       socket.emit("register", { userId: user?.userId });
-    });
+    };
 
-    socket.on("disconnect", () => {
+    const handleDisconnect = () => {
       console.log("Disconnected from socket server");
-    });
+    };
 
-    socket.on("connect_error", (err) => {
+    const handleError = (err: Error) => {
       console.error(`Connection error: ${err.message}`);
       toast({
         title: "Connection Error",
         description: `Failed to connect to the server: ${err.message}`,
         variant: "destructive",
       });
-    });
-  }, [toast, user]);
+    };
+
+    socket.on("connect", handleConnect);
+    socket.on("disconnect", handleDisconnect);
+    socket.on("connect_error", handleError);
+
+    return () => {
+      socket.off("connect", handleConnect);
+      socket.off("disconnect", handleDisconnect);
+      socket.off("connect_error", handleError);
+    };
+  }, [toast, user?.userId]);
 
   useEffect(() => {
     if (localStorage.getItem("music")) {

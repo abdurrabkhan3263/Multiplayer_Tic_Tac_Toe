@@ -4,11 +4,12 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import RoomForm from "./RoomForm";
 import { useToast } from "@/hooks/use-toast";
-import { io } from "socket.io-client";
 import { useNavigate } from "react-router-dom";
 import { GameError, User } from "@/types";
 import SearchingForAnotherPlayer from "./SearchingForAnotherPlayer";
 import { ENTER_BTN_ROOM_TEXT, ENTER_HEADER_TEXT } from "@/lib/constants";
+import { io } from "socket.io-client";
+import { useSocket } from "@/context/SocketProvider";
 
 interface RoomElemProps {
   name: string;
@@ -30,7 +31,7 @@ function RoomElem({
   const [isEntering, setIsEntering] = React.useState<boolean>(false);
   const [roomName, setRoomName] = React.useState<string>(name);
   const { toast } = useToast();
-  const socket = io("/game");
+  const { socket } = useSocket();
   const [searchingToAnotherUser, setSearchingToAnotherUser] =
     React.useState<boolean>(false);
   const navigate = useNavigate();

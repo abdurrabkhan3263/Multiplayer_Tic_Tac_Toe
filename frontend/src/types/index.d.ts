@@ -29,6 +29,7 @@ export declare type Room = {
   activeUsers: string;
   clientCount: string;
   type: ROOM_TYPE;
+  createdBy: string;
 };
 
 export declare type WinStatusType = {

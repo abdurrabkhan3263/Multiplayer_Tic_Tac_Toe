@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { useSocket } from "@/context/SocketProvider";
 
@@ -16,10 +16,8 @@ function SearchingForAnotherPlayer({
   const { socket } = useSocket();
 
   const handleDialogOpen = () => {
-    console.log(roomId, dialogOpen);
     setDialogOpen((prev) => !prev);
     if (dialogOpen && roomId) {
-      console.log({ roomId });
       socket.emit("player_left", roomId);
     }
   };
@@ -45,4 +43,4 @@ function SearchingForAnotherPlayer({
   );
 }
 
-export default SearchingForAnotherPlayer;
+export default memo(SearchingForAnotherPlayer);

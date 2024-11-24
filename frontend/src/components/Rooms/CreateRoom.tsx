@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { memo, useEffect } from "react";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import RoomForm from "./RoomForm";
@@ -102,4 +102,4 @@ function CreateRoom({
   );
 }
 
-export default CreateRoom;
+export default memo(CreateRoom);

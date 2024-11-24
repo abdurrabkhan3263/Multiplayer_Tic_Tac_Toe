@@ -28,7 +28,7 @@ function CustomRoomSection({ user }: CustomRoomSectionProps) {
         if (allRoomResponse?.status !== "success") {
           throw new Error(allRoomResponse?.message);
         }
-        setListRooms(allRoomResponse.data);
+        setListAllRooms(allRoomResponse.data);
       } catch (err) {
         const errorMessage =
           err instanceof Error
@@ -39,6 +39,11 @@ function CustomRoomSection({ user }: CustomRoomSectionProps) {
         console.error(errorMessage);
       }
     })();
+
+    return () => {
+      setListAllRooms([]);
+      setListOurRooms([]);
+    };
   }, [user?.userId]);
 
   return (

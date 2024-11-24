@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
@@ -56,4 +56,4 @@ function RoomForm({
   );
 }
 
-export default RoomForm;
+export default memo(RoomForm);
