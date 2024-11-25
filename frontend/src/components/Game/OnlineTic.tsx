@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import GameBoard from "./GameBoard";
 import { useRoomContext } from "@/context/RoomContext";
 import { useSocket } from "@/context/SocketProvider";
@@ -19,6 +19,9 @@ function OnlineTic() {
   const { socket } = useSocket();
   const { user, setUser, music } = useSocket();
   const { roomId } = useRoomContext();
+  const moveAudioRef = useRef(new Audio("/audio/move.mp3"));
+  const winAudioRef = useRef(new Audio("/audio/win.mp3"));
+  const loseAudioRef = useRef(new Audio("/audio/lose.m4a"));
 
   const handleClick = useCallback(
     ({ index }: { index: number }) => {
@@ -29,8 +32,21 @@ function OnlineTic() {
         boxId: index,
         roomId,
       });
+
+      if (music) {
+        moveAudioRef.current.play().catch((error) => {
+          console.error("Error playing audio:", error);
+        });
+      }
     },
-    [gameData?.board, gameData?.currentTurn, roomId, socket, user?.userId],
+    [
+      gameData?.board,
+      gameData?.currentTurn,
+      music,
+      roomId,
+      socket,
+      user?.userId,
+    ],
   );
 
   const handleExit = () => {
@@ -120,7 +136,19 @@ function OnlineTic() {
     const handleGameStatus = async (RoomResult: RoomResult) => {
       if (RoomResult?.userId === user?.userId) {
         await increaseHighScore();
+        if (music) {
+          winAudioRef.current.play().catch((error) => {
+            console.error("Error playing audio:", error);
+          });
+        }
+      } else if (RoomResult?.userId !== user?.userId) {
+        if (music) {
+          loseAudioRef.current.play().catch((error) => {
+            console.error("Error playing audio:", error);
+          });
+        }
       }
+
       setWinStatus({
         isWin: RoomResult?.userId === user?.userId,
         isDraw: RoomResult?.status === "draw",
@@ -152,7 +180,7 @@ function OnlineTic() {
       socket.off("game_status", handleGameStatus);
       socket.off("rejoin_room", handleGameStart);
     };
-  }, [gameData, increaseHighScore, roomId, socket, user]);
+  }, [gameData, increaseHighScore, music, roomId, socket, user]);
 
   return (
     <>
