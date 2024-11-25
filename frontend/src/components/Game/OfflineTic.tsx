@@ -16,6 +16,8 @@ function OfflineTic() {
   const counter = useRef(0);
   const navigate = useNavigate();
   const { music } = useSocket();
+  const moveAudioRef = useRef(new Audio("/audio/move.mp3"));
+  const winAudioRef = useRef(new Audio("/audio/win.mp3"));
 
   const toggleTurn = useCallback(() => {
     setTurn((prevTurn) => (prevTurn === "X" ? "O" : "X"));
@@ -44,6 +46,11 @@ function OfflineTic() {
 
       if (isWin) {
         resetGame();
+        if (music) {
+          winAudioRef.current.play().catch((error) => {
+            console.error("Error playing audio:", error);
+          });
+        }
         setWinStatus({
           isWin: true,
           isDraw: false,
@@ -52,12 +59,18 @@ function OfflineTic() {
         });
       }
     },
-    [],
+    [music],
   );
 
   const handleClick = useCallback(
     ({ index }: { index: number }) => {
       if (board[index]) return;
+
+      if (music) {
+        moveAudioRef.current.play().catch((error) => {
+          console.error("Error playing audio:", error);
+        });
+      }
 
       const newBoard = [...board];
       newBoard[index] = turn;
@@ -79,7 +92,7 @@ function OfflineTic() {
 
       toggleTurn();
     },
-    [board, checkIsWin, turn, toggleTurn],
+    [board, music, turn, toggleTurn, checkIsWin],
   );
 
   const handleExit = () => {

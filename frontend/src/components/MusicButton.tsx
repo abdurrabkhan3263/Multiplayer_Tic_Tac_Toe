@@ -9,7 +9,7 @@ function MusicButton() {
     localStorage.setItem("music", JSON.stringify(!music));
 
     if (!music) {
-      const audio = new Audio("/sounds/button.m4a");
+      const audio = new Audio("/audio/btn.m4a");
       audio.play();
     }
   };

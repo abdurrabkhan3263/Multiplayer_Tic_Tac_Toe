@@ -9,6 +9,7 @@ import { socket } from "@/lib/socket.ts";
 import { useToast } from "@/hooks/use-toast";
 import { User } from "@/types";
 import { getUser } from "@/lib/action/user.action";
+import BackgroundMusic from "@/components/BackgroundMusic";
 
 interface SocketContextType {
   socket: typeof socket;
@@ -27,6 +28,7 @@ const SocketContext = createContext<SocketContextType>({
   music: true,
   setMusic: () => {},
 });
+
 export const useSocket = () => useContext(SocketContext);
 
 const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
@@ -97,6 +99,7 @@ const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
     <SocketContext.Provider
       value={{ socket, user, setUser, dbRef, music, setMusic }}
     >
+      <BackgroundMusic music={music} />
       {children}
     </SocketContext.Provider>
   );
