@@ -5,7 +5,7 @@ import { useSocket } from "@/context/SocketProvider";
 import { useNavigate } from "react-router-dom";
 import PlayerLeft from "./PlayerLeft";
 import PlayerWin from "./PlayerWin";
-import { GameState, RoomResult, WinStatusType } from "@/types";
+import { GameState, OnlineGameData, RoomResult, WinStatusType } from "@/types";
 import { INITIAL_WIN_STATUS } from "@/lib/constants";
 import { increaseHighScore as increaseHighScoreInDB } from "@/lib/action/user.action";
 
@@ -14,6 +14,7 @@ function OnlineTic() {
   const [gameData, setGameData] = useState<GameState>();
   const [winStatus, setWinStatus] = useState<WinStatusType>(INITIAL_WIN_STATUS);
   const [leftDialog, setLeftDialog] = useState<boolean>(false);
+  const [onlineGameData, setOnlineGameData] = useState<OnlineGameData>();
   const navigate = useNavigate();
   const { socket } = useSocket();
   const { user, setUser, music } = useSocket();
@@ -59,6 +60,8 @@ function OnlineTic() {
   // * Game Start event
 
   useEffect(() => {
+    if (!user || !roomId) return;
+
     socket.emit("rejoin_room", { roomId, userId: user?.userId });
   }, [roomId, socket, user]);
 
@@ -67,6 +70,17 @@ function OnlineTic() {
   useEffect(() => {
     const handleGameStart = (data: GameState) => {
       setGameData(data);
+      setOnlineGameData({
+        opponentName: (data?.player1?.userId !== user?.userId
+          ? data?.player1?.userName
+          : data?.player2?.userName) as string,
+        ourSymbol: (data?.player1?.userId === user?.userId
+          ? data?.player1?.symbol
+          : data?.player2?.symbol) as "X" | "O",
+        opponentId: (data?.player1?.userId !== user?.userId
+          ? data?.player1?.userId
+          : data?.player2?.userId) as string,
+      });
 
       const currentSymbol =
         data.player1?.userId === data.currentTurn
@@ -139,20 +153,14 @@ function OnlineTic() {
       socket.off("rejoin_room", handleGameStart);
     };
   }, [gameData, increaseHighScore, roomId, socket, user]);
+
   return (
     <>
       <GameBoard
         handleExitBtn={handleExit}
         handleClick={handleClick}
         board={gameData?.board || []}
-        OnlineGameData={{
-          opponentName: (gameData?.player1?.userId !== user?.userId
-            ? gameData?.player1?.userName
-            : gameData?.player2?.userName) as string,
-          ourSymbol: (gameData?.player1?.userId === user?.userId
-            ? gameData?.player1?.symbol
-            : gameData?.player2?.symbol) as "X" | "O",
-        }}
+        OnlineGameData={onlineGameData}
         currentTurn={turn as "X" | "O"}
       />
       <PlayerLeft

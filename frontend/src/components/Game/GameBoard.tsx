@@ -4,13 +4,13 @@ import { Separator } from "@/components/ui/separator";
 import Score from "../Score";
 import MusicButton from "../MusicButton";
 import { GameHeader } from "../GameHeader";
-import { useEffect } from "react";
 import { cn } from "@/lib/utils";
 
 interface GameBoardProps {
   OnlineGameData?: {
     opponentName: string;
     ourSymbol: "X" | "O";
+    opponentId: string;
   };
   currentTurn: "X" | "O";
   handleExitBtn: () => void;
@@ -45,6 +45,7 @@ function GameBoard({
               opponentName={OnlineGameData?.opponentName || ""}
               mySymbol={OnlineGameData?.ourSymbol || "X"}
               currentTurn={currentTurn}
+              opponentId={OnlineGameData?.opponentId || ""}
             />
           </div>
           <Separator className="my-2.5 bg-bg" />

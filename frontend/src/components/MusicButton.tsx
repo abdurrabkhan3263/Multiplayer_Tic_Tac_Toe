@@ -7,9 +7,14 @@ function MusicButton() {
   const handleMusicPlay = () => {
     setMusic((prev) => !prev);
     localStorage.setItem("music", JSON.stringify(!music));
+
+    if (!music) {
+      const audio = new Audio("/sounds/button.m4a");
+      audio.play();
+    }
   };
 
-  if (music === undefined) <></>;
+  if (music === undefined) return <></>;
 
   return (
     <Button
