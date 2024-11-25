@@ -18,6 +18,41 @@
   }
 }
 
+.emoji-message {
+  position: absolute;
+  height: 2rem;
+  width: 2rem;
+  right: -2rem;
+  top: -0.75rem;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  animation:
+    opacity 0.5s ease-in-out forwards,
+    bounce 0.5s infinite;
+}
+
+@keyframes opacity {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes bounce {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-0.3rem);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
 .game-font {
   font-family: "Press Start 2P", sans-serif;
   font-weight: 400;
@@ -59,13 +94,13 @@ img {
   transform: scale(1);
   transition: all 0.2s;
   opacity: 1;
-  animation: fadeIn 0.1s ease-in-out;
+  animation: fadeIn 0.2s ease-in-out;
 }
 
 .toggle_item_inactive {
   text-align: center;
   transform-origin: center;
-  transform: scale(0);
+  animation: fadeIn 0.2s ease-in-out;
   opacity: 0;
 }
 
@@ -73,6 +108,10 @@ img {
   0% {
     opacity: 0;
     transform: scale(0.9);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.1);
   }
   100% {
     opacity: 1;

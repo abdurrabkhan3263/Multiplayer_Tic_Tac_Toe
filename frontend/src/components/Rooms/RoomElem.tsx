@@ -97,11 +97,16 @@ function RoomElem({
   );
 
   const handleMatchFound = React.useCallback(
-    ({ roomId }: { roomId: string }) => {
+    (roomId: string) => {
       navigate(`/play/${roomId}`);
     },
     [navigate],
   );
+
+  const handleOpenChange = () => {
+    if (participants === "2") return;
+    setDialogOpen((prev) => !prev);
+  };
 
   useEffect(() => {
     socket.on("game_error", handleGameError);
@@ -109,7 +114,7 @@ function RoomElem({
   }, [handleGameError, handleMatchFound, socket]);
 
   return (
-    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+    <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <div className="group w-full cursor-pointer select-none">
           <div className="flex w-full items-center justify-between rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 p-4 shadow-md transition-all duration-300 hover:scale-[1.02] hover:shadow-lg">

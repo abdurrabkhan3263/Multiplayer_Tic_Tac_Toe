@@ -152,8 +152,6 @@ export default class SocketController {
       this.gameRooms.delete(room);
       await redis.del(room);
 
-      console.log(roomData);
-
       if (roomData?.createdBy) {
         await redis.lRem(`rooms:${roomData.createdBy}`, 1, room);
       }
@@ -298,6 +296,9 @@ export default class SocketController {
 
       // Handle Chatting
       this.handler_chatting(socket);
+
+      // Handle Send Emoji
+      this.handler_sendEmoji(socket);
     });
   }
 
@@ -493,6 +494,7 @@ export default class SocketController {
   private handler_rejoinIntoRoom(socket: Socket) {
     this.on(socket, "rejoin_room", async ({ roomId, userId }: GameStart) => {
       const gameState = this.gameRooms.get(roomId);
+
       if (!gameState) {
         this.emit_gameError({
           socket,
@@ -548,6 +550,12 @@ export default class SocketController {
     });
   }
 
+  private handler_sendEmoji(socket: Socket) {
+    this.on(socket, "sendEmoji", ({ roomId, emoji, from }) => {
+      this.emit_Emoji(roomId, { emoji, from });
+    });
+  }
+
   // ? Emitters
 
   private emit_gameError({ socket, message, data }: GameError) {
@@ -586,5 +594,9 @@ export default class SocketController {
 
   private emit_playerMove(roomId: string, gameState: GameState) {
     this.emitToRoom(roomId, "player_move", gameState);
+  }
+
+  private emit_Emoji(roomId: string, data: any) {
+    this.emitToRoom(roomId, "receiveEmoji", data);
   }
 }

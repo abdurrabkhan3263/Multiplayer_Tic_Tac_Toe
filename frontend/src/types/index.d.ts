@@ -27,7 +27,7 @@ export declare type Room = {
   roomName: string;
   password: string;
   activeUsers: string;
-  clientCount: string;
+  playerCount: string;
   type: ROOM_TYPE;
   createdBy: string;
 };
@@ -72,6 +72,12 @@ export declare type PlayerWinMessage = {
 export declare type RoomResult = {
   status: "win" | "draw";
   userId?: string;
+};
+
+export declare type OnlineGameData = {
+  opponentName: string;
+  ourSymbol: "X" | "O";
+  opponentId: string;
 };
 
 export declare type Player = "X" | "O";

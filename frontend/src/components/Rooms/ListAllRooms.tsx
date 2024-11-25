@@ -39,7 +39,7 @@ function ListAllRooms({
           <div className="flex flex-col gap-2">
             {listRoom.length > 0 ? (
               listRoom.map(
-                ({ roomName, password, roomId, type, clientCount }, index) => (
+                ({ roomName, password, roomId, type, playerCount }, index) => (
                   <RoomElem
                     user={user}
                     key={index}
@@ -47,7 +47,7 @@ function ListAllRooms({
                     password={password}
                     roomId={roomId}
                     type={type}
-                    participants={clientCount}
+                    participants={playerCount}
                   />
                 ),
               )
